@@ -37,7 +37,7 @@ AST_Func* new_func(AST_Type *return_type, AST_Decl *func_decl, AST_Decl_Func *de
 	return new;
 }
 
-AST_Func_List *new_func_list()
+AST_Func_List *new_func_list(void)
 {
 	AST_Func_List *new = (AST_Func_List*) malloc(sizeof(AST_Func_List));
 	new->function = NULL;
@@ -60,7 +60,7 @@ AST_Func_List *func_list_append(AST_Func_List *current, AST_Func *value)
 // TYPE
 ///////////////////////////////////////////////////////////////////////////////
 
-AST_Type *new_empty_type()
+AST_Type *new_empty_type(void)
 {
 	AST_Type *new = (AST_Type*) malloc(sizeof(AST_Type));
 	new->qualifier_and_specifier = 0;
@@ -105,7 +105,7 @@ AST_Iden *new_identifier(char* identifier)
 	return new;
 }
 
-AST_Iden_List* new_identifier_list()
+AST_Iden_List* new_identifier_list(void)
 {
 	AST_Iden_List *new = (AST_Iden_List*) malloc(sizeof(AST_Iden_List));
 	new->identifier = NULL;
@@ -143,7 +143,7 @@ AST_Decl *new_function_declarator(AST_Iden *identifier)
 	return new;
 }
 
-AST_Decl_List* new_decl_list()
+AST_Decl_List* new_decl_list(void)
 {
 	AST_Decl_List *new = (AST_Decl_List*) malloc(sizeof(AST_Decl_List));
 	new->declarator = NULL;
@@ -328,7 +328,7 @@ AST_Expr* new_struct_pointer_member_access_expression(AST_Expr *pointer_structur
 	return new;
 }
 
-AST_Expr_List *new_expression_list()
+AST_Expr_List *new_expression_list(void)
 {
 	AST_Expr_List *new = (AST_Expr_List*) malloc(sizeof(AST_Expr_List));
 	new->expression = NULL;
@@ -359,13 +359,13 @@ AST_Stat *new_expression_statement(AST_Expr *expression)
 	return new;
 }
 
-AST_Stat *new_statement()
+AST_Stat *new_statement(void)
 {
 	AST_Stat *new = (AST_Stat*) malloc(sizeof(AST_Stat));
 	return new;
 }
 
-AST_Stat_List *new_statement_list()
+AST_Stat_List *new_statement_list(void)
 {
 	AST_Stat_List *new = (AST_Stat_List*) malloc(sizeof(AST_Stat_List));
 	new->statement = NULL;
