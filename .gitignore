@@ -50,3 +50,7 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+bin/*
+src/lex.yy.c
+src/parser.tab.c
+src/parser.tab.h
