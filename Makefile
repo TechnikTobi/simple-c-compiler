@@ -30,8 +30,8 @@ RISCV_LD   := riscv64-unknown-elf-ld
 SPIKE      := spike pk
 
 # Directories for testing the compiler
-INPUT_DIR  := inputs
-OUTPUT_DIR := outputs
+INPUT_DIR  := example_inputs
+OUTPUT_DIR := example_outputs
 
 .PHONY: all clean
 
