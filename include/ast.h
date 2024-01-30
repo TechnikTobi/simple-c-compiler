@@ -28,7 +28,7 @@ S_AST_Type
 	ETypeNames      type;
 };
 
-AST_Type *new_empty_type();
+AST_Type *new_empty_type(void);
 AST_Type *new_type(ETypeNames type);
 AST_Type *add_qualifier_or_specifier(AST_Type *type, unsigned int qualifier_specifier);
 AST_Type *add_modifier(AST_Type *type, unsigned int modifier);
@@ -55,7 +55,7 @@ S_AST_Decl_List
 	AST_Decl_List            *next;
 };
 
-AST_Decl_List* new_decl_list();
+AST_Decl_List* new_decl_list(void);
 AST_Decl_List* decl_list_append(AST_Decl_List *current, AST_Decl *value);
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -89,7 +89,7 @@ S_AST_Func_List
 	AST_Func_List *next;
 };
 
-AST_Func_List* new_func_list();
+AST_Func_List* new_func_list(void);
 AST_Func_List* func_list_append(AST_Func_List *current, AST_Func *value);
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -111,7 +111,7 @@ S_AST_Iden_List
 	AST_Iden_List *next;
 };
 
-AST_Iden_List* new_identifier_list();
+AST_Iden_List* new_identifier_list(void);
 AST_Iden_List* identifier_list_append(AST_Iden_List *current, AST_Iden *value);
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -214,7 +214,7 @@ S_AST_Expr_List
 	AST_Expr_List *next;
 };
 
-AST_Expr_List* new_expression_list(); 
+AST_Expr_List* new_expression_list(void); 
 AST_Expr_List* expression_list_append(AST_Expr_List *current, AST_Expr *value);
 
 ///////////////////////////////////////////////////////////////////////////////
