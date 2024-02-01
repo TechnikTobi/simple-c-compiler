@@ -14,9 +14,9 @@ IS          (u|U|l|L)*
 #include "parser.tab.h"
 
 // Function declarations
-void count();
-void comment();
-int check_type();
+void count(void);
+void comment(void);
+int check_type(void);
 int fileno(FILE *stream);
 
 %}
@@ -125,13 +125,13 @@ L?\"(\\.|[^\\"])*\"     { count(); yylval.string_value = to_string(yytext); retu
 
 %%
 
-int yywrap()
+int yywrap(void)
 {
 	return(1);
 }
 
 
-void comment()
+void comment(void)
 {
 	char c, c1;
 
@@ -143,7 +143,7 @@ loop:
 
 int column = 0;
 
-void count()
+void count(void)
 {
 	int i;
 
@@ -165,7 +165,7 @@ void count()
 }
 
 
-int check_type()
+int check_type(void)
 {
 	/*
 	 * pseudo code --- this is what it should check

@@ -8,7 +8,7 @@
 #include "typedefs.h"
 #include "symbol_table.h"
 
-int yylex();
+int yylex(void);
 void yyerror(char*);
 AST_Root *tree;
 

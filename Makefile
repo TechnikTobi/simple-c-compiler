@@ -10,6 +10,8 @@ BIN_DIR := bin
 EXE     := $(BIN_DIR)/$(PROG)
 SRC     := $(wildcard $(SRC_DIR)/*.c)
 OBJ     := $(SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
+
+# Manually adding the parser and lexer object files
 OBJ     := $(OBJ) $(OBJ_DIR)/parser.tab.o $(OBJ_DIR)/lex.yy.o
 
 # Compiler
