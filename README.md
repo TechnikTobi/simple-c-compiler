@@ -13,3 +13,8 @@ The language that is accepted by the compiler has a variety of restrictions, for
 - Variables need to be declared at the start of a function.
 
 Even though these restrictions seem to put hard limitations on what can be achieved with this language, some of the [included examples are relatively complex](example_inputs/mandelbrot_ppm.c). 
+
+## Simulator
+To run the generated RISC-V assembly code you can use for example
+- [RARS - RISC-V Assembler and Runtime Simulator](https://github.com/TheThirdOne/rars). A bit slow but excellent for debugging assembly, provides features like File I/O and has good portability
+- [Spike](https://github.com/riscv-software-src/riscv-isa-sim). More advanced but a bit tricky to get everything running properly. 
