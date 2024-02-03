@@ -55,3 +55,4 @@ src/lex.yy.c
 src/parser.tab.c
 src/parser.tab.h
 example_outputs/*.s
+example_outputs/rars1_6.jar
