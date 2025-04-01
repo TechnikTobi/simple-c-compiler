@@ -461,7 +461,7 @@ write_expr_to_riscv_file
 	switch (expression->expression_type)
 	{
 		case EXPR_CONST_INT:
-			fprintf(file_pointer, "    addi      a1,zero,%d\n", expression->expression.const_int_expression);
+			fprintf(file_pointer, "    li        a1,%d\n", expression->expression.const_int_expression);
 
 			store_reg1_on_stack = 1;
 			type_name = PRIM_INT;
@@ -704,7 +704,17 @@ write_unary_expr_to_riscv_file
 			break;
 
 		case REF:
-			printf("NOT SUPPORTED: UNARY OPERATION 'REF'\n");
+			// printf("NOT SUPPORTED: UNARY OPERATION 'REF'\n");
+			printf("IN DEVELOPMENT: UNARY OPERATION 'REF'\n");
+
+			entry = lookup(table, expression->expression.unary_expression.operand->expression.identifier_expression->identifier);
+			fprintf(file_pointer, "    li        a1,%d\n", entry->stack_pointer_offset);
+
+			// Important: The type name is in this case ALWAYS an integer,
+			// (well, technically, a size_t, but who cares) as we are dealing
+			// with an address!
+			type_name = PRIM_INT;
+
 			break;
 
 		case DEREF:
