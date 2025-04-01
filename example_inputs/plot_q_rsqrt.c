@@ -8,6 +8,8 @@ main
 	double x_start, x_end, y_start, y_end;
 	double x_res, y_res;
 
+	int super_x;
+
 	double x;
 	double current_y;
 
@@ -49,14 +51,16 @@ main
 
 	x_id = 0;
 
-	while (number < x_end)
+	super_x = 0;
+
+	while (super_x < width)
 	{
-		print(number);
-		print('\n');
 		if (x_id >= width)
 		{
 			x_id = 0;
 		}
+
+		number = super_x * x_res;
 
 		/* Compute the inverse square root */
 		x2 = number * 0.5;
@@ -66,10 +70,6 @@ main
 		y  = * (float*) &i;
 		y  = y * (1.5 - (x2 * y * y));          /* 1st iteration */
 		y  = y * (1.5 - (x2 * y * y));          /* 2nd iteration, this can be removed */ 
-
-		print('y');
-		print(y);
-		print('\n');
 
 		/* Fill blank rows */
 		while (current_y > y)
@@ -86,7 +86,7 @@ main
 		}
 
 		/* Correct row, fill blank space to the left */
-		while (x_id * x_res < number)
+		while (x_id < super_x)
 		{
 			file_write(file, 255, 255, 255);
 			x_id = x_id + 1;
@@ -97,9 +97,13 @@ main
 
 		/* Write plot point */
 		file_write(file, 0, 255, 0);
+		x_id = x_id + 1;
 
-		number = number + x_res;
+		super_x = super_x + 1;
 	}
+
+	/* Account for the "unfinished" row */
+	current_y = current_y - y_res;
 
 	/* Fill blank rows */
 	while (current_y > y_start)
