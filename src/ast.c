@@ -65,6 +65,7 @@ AST_Type *new_empty_type(void)
 	AST_Type *new = (AST_Type*) malloc(sizeof(AST_Type));
 	new->qualifier_and_specifier = 0;
 	new->modifier = 0;
+	new->pointer_level = 0;
 	return new;
 }
 
@@ -91,6 +92,13 @@ AST_Type *copy_to_type_from_type(AST_Type *type, AST_Type *specifiers)
 {
 	type->qualifier_and_specifier = type->qualifier_and_specifier | specifiers->qualifier_and_specifier;
 	type->modifier = type->modifier | specifiers->modifier;
+	// What about type->pointer_level?
+	return type;
+}
+
+AST_Type *set_pointer_level(AST_Type *type, unsigned int pointer_level)
+{
+	type->pointer_level = pointer_level;
 	return type;
 }
 

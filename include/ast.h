@@ -25,7 +25,8 @@ S_AST_Type
 {
 	unsigned int             qualifier_and_specifier;
 	unsigned int             modifier;
-	ETypeNames      type;
+	unsigned int             pointer_level;
+	ETypeNames               type;
 };
 
 AST_Type *new_empty_type(void);
@@ -33,6 +34,7 @@ AST_Type *new_type(ETypeNames type);
 AST_Type *add_qualifier_or_specifier(AST_Type *type, unsigned int qualifier_specifier);
 AST_Type *add_modifier(AST_Type *type, unsigned int modifier);
 AST_Type *copy_to_type_from_type(AST_Type *type, AST_Type *specifiers);
+AST_Type *set_pointer_level(AST_Type *type, unsigned int pointer_level);
 
 ///////////////////////////////////////////////////////////////////////////////
 // DECLARATOR
