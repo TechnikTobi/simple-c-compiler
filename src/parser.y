@@ -79,6 +79,9 @@ AST_Root *tree;
 %type <type>                           declaration_specifiers;
 %type <type>                           specifier_qualifier_list;
 
+%type <uint_value>                     abstract_declarator;
+%type <uint_value>                     pointer;
+
 %type <decl>                           declarator;
 %type <decl>                           direct_declarator;
 %type <decl>                           function_declarator;
@@ -336,6 +339,16 @@ direct_declarator
 
 type_name
 	: specifier_qualifier_list                                                  { $$ = $1; }
+	| specifier_qualifier_list abstract_declarator                              { $$ = set_pointer_level($1, $2); }
+	;
+
+abstract_declarator
+	: pointer                                                                   { $$ = $1; }
+	;
+
+pointer
+	: '*'                                                                       { $$ = 1; }
+	| '*' pointer                                                               { $$ = $2 + 1; }
 	;
 
 function_declarator

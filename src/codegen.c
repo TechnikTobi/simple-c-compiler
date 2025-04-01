@@ -9,10 +9,10 @@
 #define BYTES_PER_TYPE 8
 #define SYS_CALL_EXIT 93
 
-#define REG_0(type) (type == PRIM_DOUBLE ? "fa0" : "a0")
-#define REG_1(type) (type == PRIM_DOUBLE ? "fa1" : "a1")
-#define LOAD(type)  (type == PRIM_DOUBLE ? "flw" : "lw ")
-#define STORE(type) (type == PRIM_DOUBLE ? "fsw" : "sw ")
+#define REG_0(typename) (typename->type == PRIM_DOUBLE ? "fa0" : "a0")
+#define REG_1(typename) (typename->type == PRIM_DOUBLE ? "fa1" : "a1")
+#define LOAD(typename)  (typename->type == PRIM_DOUBLE ? "flw" : "lw ")
+#define STORE(typename) (typename->type == PRIM_DOUBLE ? "fsw" : "sw ")
 
 static int FOR_COUNTER = 0;
 static int WHILE_COUNTER = 0;
@@ -205,7 +205,7 @@ void write_stat_to_riscv_file
 	{
 		case STAT_EXPR:
 			// Visit the expression
-			write_expr_to_riscv_file(file_pointer, statement->statement.expression, table, 0);
+			free(write_expr_to_riscv_file(file_pointer, statement->statement.expression, table, 0));
 			break;
 
 		case STAT_COMPOUND:
@@ -219,7 +219,7 @@ void write_stat_to_riscv_file
 		
 		case STAT_IF:
 			// Visit child node first - puts result onto stack
-			write_expr_to_riscv_file(file_pointer, statement->statement.if_statement.condition, table, 0);
+			free(write_expr_to_riscv_file(file_pointer, statement->statement.if_statement.condition, table, 0));
 
 			endif_value = ENDIF_COUNTER++;
 			write_equals_check_and_branch(file_pointer, "endif", endif_value);
@@ -237,7 +237,7 @@ void write_stat_to_riscv_file
 
 		case STAT_IF_ELSE:
 			// Visit child node with condition expression first - puts result onto stack
-			write_expr_to_riscv_file(file_pointer, statement->statement.if_else_statement.condition, table, 0);
+			free(write_expr_to_riscv_file(file_pointer, statement->statement.if_else_statement.condition, table, 0));
 
 			// Write the boolean check and branching jump
 			else_value = ELSE_COUNTER++;
@@ -266,7 +266,7 @@ void write_stat_to_riscv_file
 
 		case STAT_FOR:
 			// Visit the initial init expression - Remember that this goes out of scope!
-			write_expr_to_riscv_file(file_pointer, statement->statement.for_statement.init_expression, table, 0);
+			free(write_expr_to_riscv_file(file_pointer, statement->statement.for_statement.init_expression, table, 0));
 
 			// Write the "header" of the for loop
 			// This gets revisited every time to re-check the condition
@@ -279,7 +279,7 @@ void write_stat_to_riscv_file
 			NEXT_CONTINUE = construct_string("updatefor", for_value);
 
 			// Write the condition check
-			write_expr_to_riscv_file(file_pointer, statement->statement.for_statement.condition, table, 0);
+			free(write_expr_to_riscv_file(file_pointer, statement->statement.for_statement.condition, table, 0));
 
 			// Write the boolean check and branching jump
 			write_equals_check_and_branch(file_pointer, "endfor", for_value);
@@ -289,7 +289,7 @@ void write_stat_to_riscv_file
 
 			// Write update expression with label to jump to in case of continue
 			fprintf(file_pointer, ".updatefor%d:\n", for_value);
-			write_expr_to_riscv_file(file_pointer, statement->statement.for_statement.update_expression, table, 0);
+			free(write_expr_to_riscv_file(file_pointer, statement->statement.for_statement.update_expression, table, 0));
 
 			// Jump to the start with the condition check
 			fprintf(file_pointer, "    j         .for%d\n", for_value);
@@ -318,7 +318,7 @@ void write_stat_to_riscv_file
 			NEXT_CONTINUE = construct_string("while", while_value);
 
 			// Write the condition check
-			write_expr_to_riscv_file(file_pointer, statement->statement.while_statement.condition, table, 0);
+			free(write_expr_to_riscv_file(file_pointer, statement->statement.while_statement.condition, table, 0));
 
 			// Write the boolean check and branching jump
 			write_equals_check_and_branch(file_pointer, "endwhile", while_value);
@@ -356,7 +356,7 @@ void write_stat_to_riscv_file
 
 			// Write the condition check with label for jump in case of continue
 			fprintf(file_pointer, ".whilecond%d:\n", while_value);
-			write_expr_to_riscv_file(file_pointer, statement->statement.do_while_statement.condition, table, 0);
+			free(write_expr_to_riscv_file(file_pointer, statement->statement.do_while_statement.condition, table, 0));
 
 			// Put one into the other register
 			fprintf(file_pointer, "    addi      a0, zero, 1\n");
@@ -437,8 +437,7 @@ write_equals_check_and_branch
 	fprintf(file_pointer, "    blt       a1, a0, .%s%d\n", base_jump_type, jump_counter);
 }
 
-ETypeNames 
-write_expr_to_riscv_file 
+AST_Type *write_expr_to_riscv_file 
 (
 	FILE *file_pointer,	
 	AST_Expr *expression, 
@@ -456,7 +455,7 @@ write_expr_to_riscv_file
 	int ternary_end_value = -1;
 
 	int store_reg1_on_stack = 0;
-	ETypeNames type_name = PRIM_VOID;
+	AST_Type *type_name = new_empty_type();
 
 	switch (expression->expression_type)
 	{
@@ -464,7 +463,7 @@ write_expr_to_riscv_file
 			fprintf(file_pointer, "    li        a1,%d\n", expression->expression.const_int_expression);
 
 			store_reg1_on_stack = 1;
-			type_name = PRIM_INT;
+			type_name = new_type(PRIM_INT);
 			break;
 
 		case EXPR_CONST_DOUBLE:
@@ -478,14 +477,14 @@ write_expr_to_riscv_file
 			fprintf(file_pointer, "    flw       fa1, -%d(sp)\n", BYTES_PER_TYPE);
 
 			store_reg1_on_stack = 1;
-			type_name = PRIM_DOUBLE;
+			type_name = new_type(PRIM_DOUBLE);
 			break;
 
 		case EXPR_CONST_CHAR:
 			fprintf(file_pointer, "    addi      a1,zero,%d\n", (int) expression->expression.const_char_expression);
 			
 			store_reg1_on_stack = 1;
-			type_name = PRIM_CHAR;
+			type_name = new_type(PRIM_CHAR);;
 			break;
 
 		case EXPR_CONST_STRING:
@@ -500,9 +499,10 @@ write_expr_to_riscv_file
 			if (entry == NULL)
 			{
 				printf("PANIC! CAN'T FIND IDENTIFIER!\n");
+				exit(1);
 			}
 
-			type_name = entry->type->type;
+			type_name = clone_type(entry->type);
 
 			fprintf(file_pointer, "# Reading '%s'\n", expression->expression.identifier_expression->identifier);
 			fprintf(file_pointer, "    %s       %s, %d(s0)\n", LOAD(type_name), REG_1(type_name), entry->stack_pointer_offset);
@@ -524,7 +524,7 @@ write_expr_to_riscv_file
 
 		case EXPR_TERNARY:
 			// Visit child node with condition expression first - puts result onto stack
-			write_expr_to_riscv_file(file_pointer, expression->expression.ternary_expression.condition, table, 0);
+			free(write_expr_to_riscv_file(file_pointer, expression->expression.ternary_expression.condition, table, 0));
 
 			// Put one into the other register
 			fprintf(file_pointer, "    addi      a0, zero, 1\n");
@@ -544,7 +544,7 @@ write_expr_to_riscv_file
 			fprintf(file_pointer, ".ternaryelse%d:\n", ternary_else_value);
 
 			// Visit else-body
-			write_expr_to_riscv_file(file_pointer, expression->expression.ternary_expression.else_expression, table, 0);
+			free(write_expr_to_riscv_file(file_pointer, expression->expression.ternary_expression.else_expression, table, 0));
 
 			// After visiting the else-body, jump to the endif
 			fprintf(file_pointer, "    j         .ternaryend%d\n", ternary_end_value);
@@ -557,7 +557,13 @@ write_expr_to_riscv_file
 			break;
 
 		case EXPR_CAST:
-			printf("NOT SUPPORTED: EXPR_CAST\n");
+			printf("IN DEVELOPMENT: EXPR_CAST\n");
+
+			// TODO: ACTUALLY A LOT MORE THAN JUST CHANGING THE TYPE!
+
+			free(write_expr_to_riscv_file(file_pointer, expression->expression.cast_expression.expression, table, 0));
+			type_name = clone_type(expression->expression.cast_expression.type);
+
 			store_reg1_on_stack = 0;
 			break;
 
@@ -592,7 +598,7 @@ write_expr_to_riscv_file
 			)
 			{
 				write_file_open_expression(file_pointer, expression, table);
-				type_name = PRIM_INT;
+				type_name = new_type(PRIM_INT);
 			}
 			else if
 			(
@@ -650,8 +656,7 @@ write_expr_to_riscv_file
 
 
 
-ETypeNames 
-write_unary_expr_to_riscv_file 
+AST_Type *write_unary_expr_to_riscv_file 
 (
 	FILE *file_pointer,	
 	AST_Expr *expression, 
@@ -660,7 +665,7 @@ write_unary_expr_to_riscv_file
 )
 {
 	SymbolTableEntry *entry;
-	ETypeNames type_name = -2;
+	AST_Type *type_name = new_type(-2);
 
 	// Visit the expression
 	type_name = write_expr_to_riscv_file(file_pointer, expression->expression.unary_expression.operand, table, 0);
@@ -673,7 +678,7 @@ write_unary_expr_to_riscv_file
 			break;
 
 		case UNARY_MINUS:
-			switch (type_name)
+			switch (type_name->type)
 			{
 				case PRIM_DOUBLE: fprintf(file_pointer, "    li        a1, 0x00000000\n"); 
 				                  fprintf(file_pointer, "    sw        a1, -%d(sp)\n", BYTES_PER_TYPE);
@@ -685,7 +690,7 @@ write_unary_expr_to_riscv_file
 			break;
 
 		case B_ONE_COMPLEMENT:
-			switch (type_name)
+			switch (type_name->type)
 			{
 				case PRIM_INT:    fprintf(file_pointer, "    not       a1, a1\n"); break;
 				default:          printf("UNARY EXPRESSION WARNING: Unsupported type for B_ONE_COMPLEMENT!\n");
@@ -693,7 +698,7 @@ write_unary_expr_to_riscv_file
 			break;
 
 		case L_NOT:
-			switch (type_name)
+			switch (type_name->type)
 			{
 				case PRIM_DOUBLE: fprintf(file_pointer, "    flt.s     a1, zero, fa1\n"); break;
 				case PRIM_INT:    fprintf(file_pointer, "    slt       a1, zero, a1\n"); break;
@@ -704,21 +709,30 @@ write_unary_expr_to_riscv_file
 			break;
 
 		case REF:
-			// printf("NOT SUPPORTED: UNARY OPERATION 'REF'\n");
-			printf("IN DEVELOPMENT: UNARY OPERATION 'REF'\n");
+			printf("IN DEVELOPMENT: UNARY OPERATION 'REF'.\n");
+			printf("    AS C REQUIRES THIS TO BE A LOCALIZABLE VALUE (=lvalue) WE ASSUME THIS TO BE AN IDENTIFIER\n");
 
 			entry = lookup(table, expression->expression.unary_expression.operand->expression.identifier_expression->identifier);
 			fprintf(file_pointer, "    li        a1,%d\n", entry->stack_pointer_offset);
 
-			// Important: The type name is in this case ALWAYS an integer,
-			// (well, technically, a size_t, but who cares) as we are dealing
-			// with an address!
-			type_name = PRIM_INT;
+			type_name = clone_type(entry->type);
+			set_pointer_level(type_name, entry->type->pointer_level);
 
 			break;
 
 		case DEREF:
-			printf("NOT SUPPORTED: UNARY OPERATION 'DEREF'\n");
+			printf("IN DEVELOPMENT: UNARY OPERATION 'DEREF'\n");
+
+			int pointer_level = type_name->pointer_level;
+			if (pointer_level < 1)
+			{
+				printf("WARNING: TRYING TO DEREF NON-POINTER!\n");
+			}
+
+			fprintf(file_pointer, "# Dereferencing (needs temp register to add stack pointer with offset from a1)\n");
+			fprintf(file_pointer, "    add       t0, sp, a1\n"); 
+			fprintf(file_pointer, "    %s       %s, 0(t0)\n", LOAD(type_name), REG_1(type_name));
+
 			break;
 
 		case POSTFIX_INC:
@@ -730,7 +744,7 @@ write_unary_expr_to_riscv_file
 			entry = lookup(table, expression->expression.unary_expression.operand->expression.identifier_expression->identifier);
 
 			// Increment value, put result into REG_0
-			switch (type_name)
+			switch (type_name->type)
 			{
 				case PRIM_INT:    fprintf(file_pointer, "    addi      a0, a1, 1\n"); break;
 				case PRIM_DOUBLE: fprintf(file_pointer, "    addi      a0, zero, 1\n");
@@ -752,7 +766,7 @@ write_unary_expr_to_riscv_file
 			entry = lookup(table, expression->expression.unary_expression.operand->expression.identifier_expression->identifier);
 
 			// Decrement value, put result into REG_0
-			switch (type_name)
+			switch (type_name->type)
 			{
 				case PRIM_INT:    fprintf(file_pointer, "    addi      a0, zero, 1\n");
 				                  fprintf(file_pointer, "    sub       a0, a1, a0\n"); break;
@@ -774,7 +788,7 @@ write_unary_expr_to_riscv_file
 			entry = lookup(table, expression->expression.unary_expression.operand->expression.identifier_expression->identifier);
 
 			// Increment value, put result into REG_1
-			switch (type_name)
+			switch (type_name->type)
 			{
 				case PRIM_INT:    fprintf(file_pointer, "    addi      a1, a1, 1\n"); break;
 				case PRIM_DOUBLE: fprintf(file_pointer, "    addi      a0, zero, 1\n");
@@ -797,7 +811,7 @@ write_unary_expr_to_riscv_file
 			entry = lookup(table, expression->expression.unary_expression.operand->expression.identifier_expression->identifier);
 
 			// Decrement value, put result into REG_1
-			switch (type_name)
+			switch (type_name->type)
 			{
 				case PRIM_INT:    fprintf(file_pointer, "    addi      a0, zero, 1\n");
 				                  fprintf(file_pointer, "    sub       a1, a1, a0\n"); break;
@@ -826,8 +840,7 @@ write_unary_expr_to_riscv_file
 	return type_name;
 }
 
-ETypeNames 
-write_binary_expr_to_riscv_file 
+AST_Type *write_binary_expr_to_riscv_file 
 (
 	FILE *file_pointer,	
 	AST_Expr *expression, 
@@ -836,10 +849,10 @@ write_binary_expr_to_riscv_file
 )
 {
 	SymbolTableEntry *entry;
-	ETypeNames type_name = -1;
+	AST_Type *type_name = new_empty_type();
 
-	ETypeNames l_type = -1;
-	ETypeNames r_type = -1;
+	AST_Type *l_type = new_type(-1);
+	AST_Type *r_type = new_type(-1);
 
 	// Visit left expression, except for the case where we have an assignment
 	if (expression->expression.binary_expression.operation != ASSIGNMENT)
@@ -861,28 +874,27 @@ write_binary_expr_to_riscv_file
 		fprintf(file_pointer, "    addi      sp, sp, %d\n\n", BYTES_PER_TYPE);
 	}
 
-	if (((int)l_type >= 0) && (l_type != r_type))
+	if (((int)l_type->type >= 0) && (l_type->type != r_type->type))
 	{
-		printf("BINARY EXPRESSION WARNING: LEFT (%d) AND RIGHT (%d) TYPES DON'T MATCH! TRYING TO CONVERT!\n", l_type, r_type);
+		printf("BINARY EXPRESSION WARNING: LEFT (%d) AND RIGHT (%d) TYPES DON'T MATCH! TRYING TO CONVERT!\n", l_type->type, r_type->type);
 
 		int conversion_rule_found = 1;
 
-		if (l_type == PRIM_DOUBLE && r_type == PRIM_INT)
+		if (l_type->type == PRIM_DOUBLE && r_type->type == PRIM_INT)
 		{
 			// Convert right to double
 			fprintf(file_pointer, "    fcvt.s.w   fa1, a1\n");
-			r_type = PRIM_DOUBLE;
+			r_type = new_type(PRIM_DOUBLE);
 		}
-		else if (l_type == PRIM_INT && r_type == PRIM_DOUBLE)
+		else if (l_type->type == PRIM_INT && r_type->type == PRIM_DOUBLE)
 		{
 			// Convert left to double
 			fprintf(file_pointer, "    fcvt.s.w   fa0, a0\n");
-			l_type = PRIM_DOUBLE;
+			l_type = new_type(PRIM_DOUBLE);
 		}
 		else
 		{
 			conversion_rule_found = 0;
-			return type_name;
 		}
 
 		if (conversion_rule_found)
@@ -892,6 +904,7 @@ write_binary_expr_to_riscv_file
 		else
 		{
 			printf("BINARY EXPRESSION WARNING: NO CONVERSION RULE FOUND!\n");
+			return type_name;
 		}
 	}
 
@@ -914,27 +927,27 @@ write_binary_expr_to_riscv_file
 				printf("ERROR: Could not find symbol table entry!\n"); fflush(stdin);
 			}
 
-			l_type = entry->type->type;
+			l_type = clone_type(entry->type);
 
 			// Check that types are compatible
-			if (l_type != r_type)
+			if (l_type->type != r_type->type)
 			{
 				// If not, try to make a conversion
-				printf("ASSIGNMENT WARNING: Different types: Left %d and Right %d\n", l_type, r_type);
+				printf("ASSIGNMENT WARNING: Different types: Left %d and Right %d\n", l_type->type, r_type->type);
 
-				if (l_type == PRIM_DOUBLE && r_type == PRIM_INT)  // int->double
+				if (l_type->type == PRIM_DOUBLE && r_type->type == PRIM_INT)  // int->double
 				{
 					fprintf(file_pointer, "    fcvt.s.w   fa1, a1\n");
 				}
-				else if (l_type == PRIM_INT && r_type == PRIM_DOUBLE)  // double->int
+				else if (l_type->type == PRIM_INT && r_type->type == PRIM_DOUBLE)  // double->int
 				{
 					fprintf(file_pointer, "    fcvt.w.s   a1, fa1\n");
 				}
 				else if 
 				(
-					(l_type == PRIM_CHAR && r_type == PRIM_INT)
+					(l_type->type == PRIM_CHAR && r_type->type == PRIM_INT)
 					||
-					(l_type == PRIM_INT && r_type == PRIM_CHAR)
+					(l_type->type == PRIM_INT  && r_type->type == PRIM_CHAR)
 				)
 				{
 					// No code needed for conversion	
@@ -950,60 +963,60 @@ write_binary_expr_to_riscv_file
 			fprintf(file_pointer, "# Assignment\n");
 			fprintf(file_pointer, "    %s       %s, %d(s0)\n", STORE(l_type), REG_1(l_type), entry->stack_pointer_offset);
 			fflush(file_pointer);
-			type_name = r_type;
+			type_name = clone_type(r_type);
 			break;
 
 		case PLUS:
-			switch (r_type)
+			switch (r_type->type)
 			{
 				case PRIM_DOUBLE: fprintf(file_pointer, "    fadd.s    fa1, fa0, fa1\n"); break;
 				case PRIM_INT:    fprintf(file_pointer, "    add       a1, a0, a1\n"); break;
 				default:          printf("BINARY EXPRESSION WARNING: Unsupported RIGHT TYPE for PLUS!\n");
 			}
-			type_name = r_type;
+			type_name = clone_type(r_type);
 			break;
 
 		case MINUS:
-			switch (r_type)
+			switch (r_type->type)
 			{
 				case PRIM_DOUBLE: fprintf(file_pointer, "    fsub.s    fa1, fa0, fa1\n"); break;
 				case PRIM_INT:    fprintf(file_pointer, "    sub       a1, a0, a1\n"); break;
 				default:          printf("BINARY EXPRESSION WARNING: Unsupported RIGHT TYPE for MINUS!\n");
 			}
-			type_name = r_type;
+			type_name = clone_type(r_type);
 			break;
 
 		case MULT:
-			switch (r_type)
+			switch (r_type->type)
 			{
 				case PRIM_DOUBLE: fprintf(file_pointer, "    fmul.s    fa1, fa0, fa1\n"); break;
 				case PRIM_INT:    fprintf(file_pointer, "    mul       a1, a0, a1\n"); break;
-				default:          printf("BINARY EXPRESSION WARNING: Unsupported RIGHT TYPE for MULT!\n");
+				default:          printf("BINARY EXPRESSION WARNING: Unsupported RIGHT TYPE for MULT! (%d)\n", r_type->type);
 			}
-			type_name = r_type;
+			type_name = clone_type(r_type);
 			break;
 
 		case DIV:
-			switch (r_type)
+			switch (r_type->type)
 			{
 				case PRIM_DOUBLE: fprintf(file_pointer, "    fdiv.s    fa1, fa0, fa1\n"); break;
 				case PRIM_INT:    fprintf(file_pointer, "    div       a1, a0, a1\n"); break;
 				default:          printf("BINARY EXPRESSION WARNING: Unsupported RIGHT TYPE for DIV!\n");
 			}
-			type_name = r_type;
+			type_name = clone_type(r_type);
 			break;
 
 		case MOD:
-			switch (r_type)
+			switch (r_type->type)
 			{
 				case PRIM_INT:    fprintf(file_pointer, "    rem       a1, a0, a1\n"); break;
 				default:          printf("BINARY EXPRESSION WARNING: Unsupported RIGHT TYPE for MOD!\n");
 			}
-			type_name = r_type;
+			type_name = clone_type(r_type);
 			break;
 
 		case EQUAL:
-			switch (r_type)
+			switch (r_type->type)
 			{
 				case PRIM_DOUBLE: fprintf(file_pointer, "    feq.s     a1, fa0, fa1\n"); break;
 				case PRIM_INT:    fprintf(file_pointer, "    slt       a2, a0, a1\n"); // For equality, this needs to be false
@@ -1012,11 +1025,11 @@ write_binary_expr_to_riscv_file
 				                  fprintf(file_pointer, "    xori      a1, a1, 1\n"); break;
 				default:          printf("BINARY EXPRESSION WARNING: Unsupported RIGHT TYPE for EQUAL!\n");
 			}
-			type_name = PRIM_INT;
+			type_name = new_type(PRIM_INT);
 			break;
 
 		case NOT_EQUAL:
-			switch (r_type)
+			switch (r_type->type)
 			{
 				case PRIM_DOUBLE: fprintf(file_pointer, "    feq.s     a1, fa0, fa1\n");
 				                  fprintf(file_pointer, "    xori      a1, a1, 1\n"); break;
@@ -1025,91 +1038,91 @@ write_binary_expr_to_riscv_file
 				                  fprintf(file_pointer, "    or        a1, a2, a3\n"); break;
 				default:          printf("BINARY EXPRESSION WARNING: Unsupported RIGHT TYPE for NOT_EQUAL!\n");
 			}
-			type_name = PRIM_INT;
+			type_name = new_type(PRIM_INT);
 			break;
 
 		case LESS:
-			switch (r_type)
+			switch (r_type->type)
 			{
 				case PRIM_DOUBLE: fprintf(file_pointer, "    flt.s     a1, fa0, fa1\n"); break;
 				case PRIM_INT:    fprintf(file_pointer, "    slt       a1, a0, a1\n"); break;
 				default:          printf("BINARY EXPRESSION WARNING: Unsupported RIGHT TYPE for LESS!\n");
 			}
-			type_name = PRIM_INT;
+			type_name = new_type(PRIM_INT);
 			break;
 
 		case LESS_EQUAL:
-			switch (r_type)
+			switch (r_type->type)
 			{
 				case PRIM_DOUBLE: fprintf(file_pointer, "    fle.s     a1, fa0, fa1\n"); break;
 				case PRIM_INT:    fprintf(file_pointer, "    slt       a1, a1, a0\n");
 				                  fprintf(file_pointer, "    xori      a1, a1, 1\n"); break;
 				default:          printf("BINARY EXPRESSION WARNING: Unsupported RIGHT TYPE for LESS_EQUAL!\n");
 			}
-			type_name = PRIM_INT;
+			type_name = new_type(PRIM_INT);
 			break;
 
 		case GREATER:
-			switch (r_type)
+			switch (r_type->type)
 			{
 				case PRIM_DOUBLE: fprintf(file_pointer, "    flt.s     a1, fa1, fa0\n"); break;
 				case PRIM_INT:    fprintf(file_pointer, "    slt       a1, a1, a0\n"); break;
 				default:          printf("BINARY EXPRESSION WARNING: Unsupported RIGHT TYPE for GREATER!\n");
 			}
-			type_name = PRIM_INT;
+			type_name = new_type(PRIM_INT);
 			break;
 
 		case GREATER_EQUAL:
-			switch (r_type)
+			switch (r_type->type)
 			{
 				case PRIM_DOUBLE: fprintf(file_pointer, "    fle.s     a1, fa1, fa0\n"); break;
 				case PRIM_INT:    fprintf(file_pointer, "    slt       a1, a0, a1\n");
 				                  fprintf(file_pointer, "    xori      a1, a1, 1\n"); break;
 				default:          printf("BINARY EXPRESSION WARNING: Unsupported RIGHT TYPE for GREATER_EQUAL!\n");
 			}
-			type_name = PRIM_INT;
+			type_name = new_type(PRIM_INT);
 			break;
 
 		case L_AND:
-			if (l_type == PRIM_DOUBLE || r_type == PRIM_DOUBLE) printf("BINARY EXPRESSION WARNING: Unsupported Type for L_AND!\n");
+			if (l_type->type == PRIM_DOUBLE || r_type->type == PRIM_DOUBLE) printf("BINARY EXPRESSION WARNING: Unsupported Type for L_AND!\n");
 			fprintf(file_pointer, "    and       a1, a0, a1\n");
-			type_name = PRIM_INT;
+			type_name = new_type(PRIM_INT);
 			break;
 
 		case L_OR:
-			if (l_type == PRIM_DOUBLE || r_type == PRIM_DOUBLE) printf("BINARY EXPRESSION WARNING: Unsupported Type for L_OR!\n");
+			if (l_type->type == PRIM_DOUBLE || r_type->type == PRIM_DOUBLE) printf("BINARY EXPRESSION WARNING: Unsupported Type for L_OR!\n");
 			fprintf(file_pointer, "    or        a1, a0, a1\n");
-			type_name = PRIM_INT;
+			type_name = new_type(PRIM_INT);
 			break;
 
 		case B_AND:
-			if (l_type == PRIM_DOUBLE || r_type == PRIM_DOUBLE) printf("BINARY EXPRESSION WARNING: Unsupported Type for B_AND!\n");
+			if (l_type->type == PRIM_DOUBLE || r_type->type == PRIM_DOUBLE) printf("BINARY EXPRESSION WARNING: Unsupported Type for B_AND!\n");
 			fprintf(file_pointer, "    and       a1, a0, a1\n");
-			type_name = PRIM_INT;
+			type_name = new_type(PRIM_INT);
 			break;
 
 		case B_OR:
-			if (l_type == PRIM_DOUBLE || r_type == PRIM_DOUBLE) printf("BINARY EXPRESSION WARNING: Unsupported Type for B_OR!\n");
+			if (l_type->type == PRIM_DOUBLE || r_type->type == PRIM_DOUBLE) printf("BINARY EXPRESSION WARNING: Unsupported Type for B_OR!\n");
 			fprintf(file_pointer, "    or        a1, a0, a1\n");
-			type_name = PRIM_INT;
+			type_name = new_type(PRIM_INT);
 			break;
 
 		case B_XOR:
-			if (l_type == PRIM_DOUBLE || r_type == PRIM_DOUBLE) printf("BINARY EXPRESSION WARNING: Unsupported Type for B_XOR!\n");
+			if (l_type->type == PRIM_DOUBLE || r_type->type == PRIM_DOUBLE) printf("BINARY EXPRESSION WARNING: Unsupported Type for B_XOR!\n");
 			fprintf(file_pointer, "    xor       a1, a0, a1\n");
-			type_name = PRIM_INT;
+			type_name = new_type(PRIM_INT);
 			break;
 
 		case SHIFT_L:
-			if (l_type == PRIM_DOUBLE || r_type == PRIM_DOUBLE) printf("BINARY EXPRESSION WARNING: Unsupported Type for SHIFT_L!\n");
+			if (l_type->type == PRIM_DOUBLE || r_type->type == PRIM_DOUBLE) printf("BINARY EXPRESSION WARNING: Unsupported Type for SHIFT_L!\n");
 			fprintf(file_pointer, "    sll       a1, a0, a1\n");
-			type_name = PRIM_INT;
+			type_name = new_type(PRIM_INT);
 			break;
 
 		case SHIFT_R:
-			if (l_type == PRIM_DOUBLE || r_type == PRIM_DOUBLE) printf("BINARY EXPRESSION WARNING: Unsupported Type for SHIFT_R!\n");
+			if (l_type->type == PRIM_DOUBLE || r_type->type == PRIM_DOUBLE) printf("BINARY EXPRESSION WARNING: Unsupported Type for SHIFT_R!\n");
 			fprintf(file_pointer, "    srl       a1, a0, a1\n");
-			type_name = PRIM_INT;
+			type_name = new_type(PRIM_INT);
 			break;
 
 		case CONCAT:
@@ -1127,6 +1140,9 @@ write_binary_expr_to_riscv_file
 		fprintf(file_pointer, "    addi      sp, sp, -%d\n", BYTES_PER_TYPE);
 		fprintf(file_pointer, "    %s       %s, 0(sp)\n\n", STORE(type_name), REG_1(type_name));
 	}
+
+	free(l_type);
+	free(r_type);
 
 	return type_name;
 }
@@ -1147,9 +1163,9 @@ write_print_expression
 		{
 			// Visit the expression
 			fprintf(file_pointer, "# Visit expression to be printed\n");
-			ETypeNames type = write_expr_to_riscv_file(file_pointer, expression_list->expression, table, 0);
+			AST_Type *type = write_expr_to_riscv_file(file_pointer, expression_list->expression, table, 0);
 
-			switch (type)
+			switch (type->type)
 			{
 				case PRIM_VOID:
 					printf("PRINT WARNING: Can't print type PRIM_VOID\n");
@@ -1161,8 +1177,8 @@ write_print_expression
 					fprintf(file_pointer, "# Print value for ");
 					switch (TARGET)
 					{
-						case 0: fprintf(file_pointer, "Trireme\n    addi      t0, zero, %d\n", type == PRIM_INT ? 1 :  2); break;
-						case 1: fprintf(file_pointer, "RARS   \n    li        a7, %d\n",       type == PRIM_INT ? 1 : 11); break;
+						case 0: fprintf(file_pointer, "Trireme\n    addi      t0, zero, %d\n", type->type == PRIM_INT ? 1 :  2); break;
+						case 1: fprintf(file_pointer, "RARS   \n    li        a7, %d\n",       type->type == PRIM_INT ? 1 : 11); break;
 						case 2: fprintf(file_pointer, "Spike\n");                                     // Same as printing char
 						        fprintf(file_pointer, "    sw        a1, -%d(sp)\n", BYTES_PER_TYPE); // Put character on stack
 						        fprintf(file_pointer, "    li        a0, 1\n");                       // STDOUT
@@ -1325,14 +1341,14 @@ write_file_write_expression
 		{
 			// Visit the expression
 			fprintf(file_pointer, "# Visit expression to be written\n");
-			ETypeNames type = write_expr_to_riscv_file(file_pointer, expression_list->expression, table, 0);
+			AST_Type *type = write_expr_to_riscv_file(file_pointer, expression_list->expression, table, 0);
 
 			// Write to the file previously opened 
 			fprintf(file_pointer, "\n# Write to file\n");
 			fprintf(file_pointer, "    li        a7, 64\n"); // system call for write to file
 			fprintf(file_pointer, "    mv        a0, s6\n"); // move file descriptor to a0
 
-			switch (type)
+			switch (type->type)
 			{
 				case PRIM_VOID:
 					printf("WRITE WARNING: Can't write type PRIM_VOID\n");
