@@ -2,128 +2,116 @@ int
 main
 ()
 {
-	/* Declarations */
-	int width, height;
-	int x_id, y_id;
-	double x_start, x_end, y_start, y_end;
-	double x_res, y_res;
+    /* Declarations */
+    int width, height;
+    int col_id;
+    double x_start, x_end, y_start, y_end;
+    double x_res, y_res;
+    int x;
+    double current_y;
+    int file;
 
-	int super_x;
+    float number;
+    long int i;
+    float x2, y;
 
-	double x;
-	double current_y;
+    /* X AXIS IS VERTICAL, Y AXIS IS HORIZONTAL TO MAKE WRITING EASIER! */
 
-	int red, green, blue;
-	int file, print_int;
+    /* User Values */
+    width   = 200;
+    height  = width;   /* could be something else */
+    x_start = 0.001;
+    x_end   = 5.123;
+    y_start = x_start; /* could be something else */
+    y_end   = x_end;
 
-	float number;
-	long int i;
-	float x2, y;
+    /* Computed values */
+    x_res  = (x_end - x_start) / width;
+    y_res  = (y_end - y_start) / height;
+    number = x_start;
+    col_id = 0;
+    x      = 0;
 
-	/* X AXIS IS VERTICAL, Y AXIS IS HORIZONTAL TO MAKE WRITING EASIER! */
+    /* Setup for writing to image file */
+    file = file_open("plot.ppm");
 
-	/* User Values */
-	width  = 200;
-	height = 200;
-	x_start = 0.001;
-	x_end   = 5.123;
-	y_start = x_start; /* could be something else */
-	y_end   = x_end;
-
-	/* Computed values */
-	x_res = (x_end - x_start) / width;  /* Divided by width as rotated by 90°!*/
-	y_res = (y_end - y_start) / height; /* Divided by height as rotated by 90°!*/
-	number = x_start;
-
-	/* Setup for writing to image file */
-	file = file_open("turn_by_90_deg_to_left.ppm");
-
-	/* 
-	Write image header:
-	P6      # Magic Number
-	200 200 # Width and Height in ASCI
-	255     # Max brightness
-	*/
-	file_write(file, 'P', '6', '\n', '2', '0', '0', ' ', '2', '0', '0', '\n', '2', '5', '5', '\n');
+    /* 
+    Write image header:
+    P6      # Magic Number
+    200 200 # Width and Height in ASCI
+    255     # Max brightness
+    */
+    file_write(file, 'P', '6', '\n', '2', '0', '0', ' ', '2', '0', '0', '\n', '2', '5', '5', '\n');
 
 
-	current_y = y_end;
+    current_y = y_end;
 
-	x_id = 0;
+    while (x < width)
+    {
+        if (col_id >= width)
+        {
+            col_id = 0;
+        }
 
-	super_x = 0;
+        number = x * x_res;
 
-	while (super_x < width)
-	{
-		if (x_id >= width)
-		{
-			x_id = 0;
-		}
+        /* Compute the inverse square root */
+        x2 = number * 0.5;
+        y  = number;
+        i  = * (int*) &y;
+        i  = 0x5f3759df - (i >> 1);
+        y  = * (float*) &i;
+        y  = y * (1.5 - (x2 * y * y));          /* 1st iteration */
+        y  = y * (1.5 - (x2 * y * y));          /* 2nd iteration, this can be removed */ 
 
-		number = super_x * x_res;
+        /* Fill blank rows */
+        while (current_y > y)
+        {
+            while (col_id < width)
+            {
+                /* Write the RGB values */
+                file_write(file, 255, 255, 255);
+                col_id = col_id + 1;
+            }
+            col_id = 0;
 
-		/* Compute the inverse square root */
-		x2 = number * 0.5;
-		y  = number;
-		i  = * (int*) &y;
-		i  = 0x5f3759df - (i >> 1);
-		y  = * (float*) &i;
-		y  = y * (1.5 - (x2 * y * y));          /* 1st iteration */
-		y  = y * (1.5 - (x2 * y * y));          /* 2nd iteration, this can be removed */ 
+            current_y = current_y - y_res;
+        }
 
-		/* Fill blank rows */
-		while (current_y > y)
-		{
-			while (x_id < width)
-			{
-				/* Write the RGB values */
-				file_write(file, 255, 255, 255);
-				x_id = x_id + 1;
-			}
-			x_id = 0;
+        /* Correct row, fill blank space to the left */
+        while (col_id < x)
+        {
+            file_write(file, 255, 255, 255);
+            col_id = col_id + 1;
+        }
 
-			current_y = current_y - y_res;
-		}
+        /* Write plot point */
+        file_write(file, 0, 255, 0);
+        col_id = col_id + 1;
 
-		/* Correct row, fill blank space to the left */
-		while (x_id < super_x)
-		{
-			file_write(file, 255, 255, 255);
-			x_id = x_id + 1;
-		}
+        x = x + 1;
+    }
 
-		print('g');
-		print('\n');
+    /* Account for the "unfinished" row */
+    current_y = current_y - y_res;
 
-		/* Write plot point */
-		file_write(file, 0, 255, 0);
-		x_id = x_id + 1;
+    /* Fill blank rows */
+    while (current_y > y_start)
+    {
+        while (col_id < width)
+        {
+            /* Write the RGB values */
+            file_write(file, 255, 255, 255);
+            col_id = col_id + 1;
+        }
+        col_id = 0;
 
-		super_x = super_x + 1;
-	}
+        current_y = current_y - y_res;
+    }
 
-	/* Account for the "unfinished" row */
-	current_y = current_y - y_res;
+    print('d', 'o', 'n', 'e', '\n');
 
-	/* Fill blank rows */
-	while (current_y > y_start)
-	{
-		while (x_id < width)
-		{
-			/* Write the RGB values */
-			file_write(file, 255, 255, 255);
-			x_id = x_id + 1;
-		}
-		x_id = 0;
-
-		current_y = current_y - y_res;
-	}
-
-
-
-	print('d', 'o', 'n', 'e', '\n');
-
-	/* Close the file & exit */
-	file_close(file);
-	exit(0);
+    /* Close the file & exit */
+    file_close(file);
+    exit(0);
 }
