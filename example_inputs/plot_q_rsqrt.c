@@ -8,6 +8,9 @@ main
 	double x_start, x_end, y_start, y_end;
 	double x_res, y_res;
 
+	double x;
+	double current_y;
+
 	int red, green, blue;
 	int file, print_int;
 
@@ -41,11 +44,19 @@ main
 	*/
 	file_write(file, 'P', '6', '\n', '2', '0', '0', ' ', '2', '0', '0', '\n', '2', '5', '5', '\n');
 
-	/* For each row */
-	for (y_id = 0; y_id < height; y_id++)
+
+	current_y = y_end;
+
+	x_id = 0;
+
+	while (number < x_end)
 	{
-		/* Map y_id to a number for our computations */
-		number = number + x_res;
+		print(number);
+		print('\n');
+		if (x_id >= width)
+		{
+			x_id = 0;
+		}
 
 		/* Compute the inverse square root */
 		x2 = number * 0.5;
@@ -56,25 +67,55 @@ main
 		y  = y * (1.5 - (x2 * y * y));          /* 1st iteration */
 		y  = y * (1.5 - (x2 * y * y));          /* 2nd iteration, this can be removed */ 
 
-		/* For each column */
-		for (x_id = 0; x_id < width; x_id++)
-		{
-			/* Check if the y value is "reached" */
-			if (((y_start + x_id * y_res) <= y) && (y <= (y_start + (x_id + 1) * y_res)))
-			{
-				red = blue = 0;
-				green = 255;
-			}
-			else
-			{
-				red = green = blue = 255;
-			}
+		print('y');
+		print(y);
+		print('\n');
 
-			/* Write the RGB values */
-			file_write(file, red, green, blue);
+		/* Fill blank rows */
+		while (current_y > y)
+		{
+			while (x_id < width)
+			{
+				/* Write the RGB values */
+				file_write(file, 255, 255, 255);
+				x_id = x_id + 1;
+			}
+			x_id = 0;
+
+			current_y = current_y - y_res;
 		}
 
+		/* Correct row, fill blank space to the left */
+		while (x_id * x_res < number)
+		{
+			file_write(file, 255, 255, 255);
+			x_id = x_id + 1;
+		}
+
+		print('g');
+		print('\n');
+
+		/* Write plot point */
+		file_write(file, 0, 255, 0);
+
+		number = number + x_res;
 	}
+
+	/* Fill blank rows */
+	while (current_y > y_start)
+	{
+		while (x_id < width)
+		{
+			/* Write the RGB values */
+			file_write(file, 255, 255, 255);
+			x_id = x_id + 1;
+		}
+		x_id = 0;
+
+		current_y = current_y - y_res;
+	}
+
+
 
 	print('d', 'o', 'n', 'e', '\n');
 
