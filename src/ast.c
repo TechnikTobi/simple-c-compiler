@@ -76,6 +76,18 @@ AST_Type *new_type(ETypeNames type)
 	return new;
 }
 
+AST_Type *clone_type(AST_Type *type)
+{
+	AST_Type *new = new_empty_type();
+	
+	new->qualifier_and_specifier = type->qualifier_and_specifier;
+	new->modifier                = type->modifier;
+	new->pointer_level           = type->pointer_level;
+	new->type                    = type->type;
+
+	return new;
+}
+
 AST_Type *add_qualifier_or_specifier(AST_Type *type, unsigned int qualifier_specifier)
 {
 	type->qualifier_and_specifier = type->qualifier_and_specifier | qualifier_specifier;

@@ -31,6 +31,7 @@ S_AST_Type
 
 AST_Type *new_empty_type(void);
 AST_Type *new_type(ETypeNames type);
+AST_Type *clone_type(AST_Type *type);
 AST_Type *add_qualifier_or_specifier(AST_Type *type, unsigned int qualifier_specifier);
 AST_Type *add_modifier(AST_Type *type, unsigned int modifier);
 AST_Type *copy_to_type_from_type(AST_Type *type, AST_Type *specifiers);
