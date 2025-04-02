@@ -139,7 +139,10 @@ void write_func_to_riscv_file
 	);
 
 	// Needed for return statements
-	function->table->size_without_parameter_table = variable_area_size;
+	if (function->table != NULL)
+	{
+		function->table->size_without_parameter_table = variable_area_size;
+	}
 
 	// Text section
 	fprintf(file_pointer, ".text\n");
@@ -294,6 +297,8 @@ void write_stat_to_riscv_file
 
 	char *break_backup    = NULL;
 	char *continue_backup = NULL;
+
+	int variable_area_size = 0;
 
 	switch (statement->statement_type)
 	{
@@ -492,10 +497,12 @@ void write_stat_to_riscv_file
 			// no break here intentional 
 
 		case STAT_RETURN:
+			variable_area_size = (table != NULL) ? table->size_without_parameter_table : 0;
+
 			// Restore old sp, a0, s0 and return to caller
 			// First, get the stack pointer to point to where the old s0 is stored
 			fprintf(file_pointer, "    # Restore and return to caller\n");
-			fprintf(file_pointer, "    addi      sp, s0, %d\n", table->size_without_parameter_table);
+			fprintf(file_pointer, "    addi      sp, s0, %d\n", variable_area_size);
 
 			// Restore s0
 			fprintf(file_pointer, "    lw        s0, %d(sp)\n", BYTES_PER_TYPE * 0);
