@@ -904,7 +904,7 @@ AST_Type *write_unary_expr_to_riscv_file
 			printf("    AS C REQUIRES THIS TO BE A LOCALIZABLE VALUE (=lvalue) WE ASSUME THIS TO BE AN IDENTIFIER\n");
 
 			entry = lookup(table, expression->expression.unary_expression.operand->expression.identifier_expression->identifier);
-			fprintf(file_pointer, "    li        a1,%d\n", entry->stack_pointer_offset);
+			fprintf(file_pointer, "    addi      a1, s0, %d\n", entry->stack_pointer_offset);
 
 			type_name = clone_type(entry->type);
 			set_pointer_level(type_name, entry->type->pointer_level);
@@ -921,7 +921,7 @@ AST_Type *write_unary_expr_to_riscv_file
 			}
 
 			fprintf(file_pointer, "# Dereferencing (needs temp register to add stack pointer with offset from a1)\n");
-			fprintf(file_pointer, "    add       t0, sp, a1\n"); 
+			fprintf(file_pointer, "    add       t0, zero, a1\n"); 
 			fprintf(file_pointer, "    %s       %s, 0(t0)\n", LOAD(type_name), REG_1(type_name));
 
 			break;
