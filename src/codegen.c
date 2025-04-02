@@ -670,6 +670,10 @@ AST_Type *write_unary_expr_to_riscv_file
 	// Visit the expression
 	type_name = write_expr_to_riscv_file(file_pointer, expression->expression.unary_expression.operand, table, 0);
 
+	// The "result" of the previous call is located in REG_1 (either a1 or fa1)
+	// The value stored in (f)a0 is not important at this point and may be 
+	// overwritten in the upcoming switch statement.
+
 	// Now what?
 	switch (expression->expression.unary_expression.operation)
 	{
@@ -744,6 +748,10 @@ AST_Type *write_unary_expr_to_riscv_file
 			entry = lookup(table, expression->expression.unary_expression.operand->expression.identifier_expression->identifier);
 
 			// Increment value, put result into REG_0
+			// REG_1 stays untouched at this point, as the next read should
+			// still be with the old, non-incremented value
+			// REG_0 gets used to store the result of the increment at the 
+			// variables location on the stack
 			switch (type_name->type)
 			{
 				case PRIM_INT:    fprintf(file_pointer, "    addi      a0, a1, 1\n"); break;
@@ -798,8 +806,8 @@ AST_Type *write_unary_expr_to_riscv_file
 				default:          printf("UNARY EXPRESSION WARNING: Unsupported type for PREFIX_INC!\n");
 			}
 
-			// Store contents of REG_0
-			fprintf(file_pointer, "    %s       %s, %d(s0)\n", STORE(type_name), REG_0(type_name), entry->stack_pointer_offset);
+			// Store contents of REG_1
+			fprintf(file_pointer, "    %s       %s, %d(s0)\n", STORE(type_name), REG_1(type_name), entry->stack_pointer_offset);
 			break;
 
 		case PREFIX_DEC:
@@ -821,8 +829,8 @@ AST_Type *write_unary_expr_to_riscv_file
 				default:          printf("UNARY EXPRESSION WARNING: Unsupported type for PREFIX_DEC!\n");
 			}
 
-			// Store contents of REG_0
-			fprintf(file_pointer, "    %s       %s, %d(s0)\n", STORE(type_name), REG_0(type_name), entry->stack_pointer_offset);
+			// Store contents of REG_1
+			fprintf(file_pointer, "    %s       %s, %d(s0)\n", STORE(type_name), REG_1(type_name), entry->stack_pointer_offset);
 			break;
 
 		default:
