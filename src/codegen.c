@@ -27,6 +27,44 @@ static int TARGET = 0;
 static char *NEXT_BREAK;
 static char *NEXT_CONTINUE;
 
+static AST_Func_List *FUNCTION_LIST = NULL;
+
+AST_Func *func_lookup
+(
+	AST_Func_List                      *list, 
+	char                               *identifier
+)
+{
+	AST_Func_List *current = list;
+
+	do
+	{
+		if (current->function == NULL) 
+		{
+			current = current->next;
+		}
+		else
+		{
+			if (
+				strcmp(
+					current->function->func_declarator->declarator->identifier,
+					identifier
+				)
+				== 0
+			)
+			{
+				return current->function;
+			}
+
+			// Go to the next symbol table entry
+			current = current->next;
+		}
+	} 
+	while (current != NULL);
+
+	return NULL;
+}
+
 int 
 write_ast_to_riscv_file
 (
@@ -63,6 +101,10 @@ void write_root_to_riscv_file
 	AST_Root                           *node
 )
 {
+	// Set the global, static function list for lookup
+	FUNCTION_LIST = node->functions;
+
+	// And the local one for writing each to the file
 	AST_Func_List *functions = node->functions;
 
 	// Text section & main as globl
@@ -93,27 +135,69 @@ void write_func_to_riscv_file
 	fprintf(file_pointer, ".text\n");
 
 	// Function name
-	fprintf(
-		file_pointer,
-		"%s:\n",
-		function->func_declarator->declarator->identifier
-	);
-	fflush(file_pointer);
+	char *identifier = function->func_declarator->declarator->identifier;
+	fprintf(file_pointer, "%s:\n\n", identifier);
 
-	// Setup the stack pointer
-	// Store the pointer to where variables are located in the s0 register
-	fprintf(
-		file_pointer,
-		"    addi      sp,sp,-%d\n    add       s0,sp,zero\n\n",
-		variable_area_size
-	);
+	// If this is NOT the main function then we are in a function call
+	// In that case, store the current
+	// - stack pointer
+	// - a0 register (contains return address)
+	// - s0 register (important for variable access)
+	// on the stack so we can restore that later
+	if 
+	(
+		strcmp(identifier, "main") != 0
+	)
+	{
+		fprintf(file_pointer, "# Store current sp, a0 and s0 on stack\n");
+		fprintf(file_pointer, "    add       a1, zero, sp\n");
+		fprintf(file_pointer, "    addi      sp, sp, -%d\n", BYTES_PER_TYPE);
+		fprintf(file_pointer, "    sw        a1, 0(sp)\n");
+
+		// Store the current a0 register on the stack
+		fprintf(file_pointer, "    addi      sp, sp, -%d\n", BYTES_PER_TYPE);
+		fprintf(file_pointer, "    sw        a0, 0(sp)\n");
+
+		// Store the current s0 register on the stack
+		fprintf(file_pointer, "    addi      sp, sp, -%d\n", BYTES_PER_TYPE);
+		fprintf(file_pointer, "    sw        s0, 0(sp)\n\n");
+	}
+
+	// Setup sp & s0
+	fprintf(file_pointer, "# Setup stack pointer & store start of variable section in s0 reg.\n");
+	fprintf(file_pointer, "    addi      sp,sp,-%d\n", variable_area_size);
+	fprintf(file_pointer, "    add       s0,sp,zero\n\n");
 	fflush(file_pointer);
 	
 	// Body
 	write_stat_to_riscv_file(file_pointer, function->body, function->table);
 
 	// Write nop at end so that function can't end in label without statement
-	fprintf(file_pointer, "    nop\n");
+	fprintf(file_pointer, "    nop\n\n\n");
+
+	if 
+	(
+		strcmp(identifier, "main") != 0
+	)
+	{
+		// Restore old sp, a0, s0 and return to caller
+		// First, get the stack pointer to point to where the old s0 is stored
+		fprintf(file_pointer, "    # Restore and return to caller\n");
+		fprintf(file_pointer, "    addi      sp, s0, %d\n", variable_area_size);
+
+		// Restore s0
+		fprintf(file_pointer, "    lw        s0, %d(sp)\n", BYTES_PER_TYPE * 0);
+
+		// Restore a0
+		fprintf(file_pointer, "    lw        a0, %d(sp)\n", BYTES_PER_TYPE * 1);
+
+		// Restore sp - first into a2, then into sp
+		fprintf(file_pointer, "    lw        a2, %d(sp)\n", BYTES_PER_TYPE * 2);
+		fprintf(file_pointer, "    add       sp, zero, a2\n");
+
+		// Finally, jump to the caller
+		fprintf(file_pointer, "    jr        a0\n");
+	}
 }
 
 // Write the symbol table to the assembly file and determines the offset for
@@ -494,6 +578,35 @@ AST_Type *write_expr_to_riscv_file
 			
 		case EXPR_IDENTIFIER:
 
+			// Special cases to access certain registers for debugging
+			if 
+			(
+				strcmp(expression->expression.identifier_expression->identifier, "_SP") == 0
+			)
+			{
+				fprintf(file_pointer, "    add       a1, zero, sp\n");
+				type_name = new_type(PRIM_INT);
+				break;
+			}
+			else if
+			(
+				strcmp(expression->expression.identifier_expression->identifier, "_S0") == 0
+			)
+			{
+				fprintf(file_pointer, "    add       a1, zero, s0\n");
+				type_name = new_type(PRIM_INT);
+				break;
+			}
+			else if
+			(
+				strcmp(expression->expression.identifier_expression->identifier, "_A0") == 0
+			)
+			{
+				fprintf(file_pointer, "    add       a1, zero, a0\n");
+				type_name = new_type(PRIM_INT);
+				break;
+			}
+
 			entry = lookup(table, expression->expression.identifier_expression->identifier);
 
 			if (entry == NULL)
@@ -623,7 +736,19 @@ AST_Type *write_expr_to_riscv_file
 			}
 			else
 			{
-				printf("NOT SUPPORTED: EXPR_CALL other than 'print' and 'printf'\n");
+				// Find the name of the function to call
+				AST_Func *func = func_lookup(FUNCTION_LIST, identifier);
+
+				if (func == NULL)
+				{
+					printf("ERROR: COULD NOT FIND FUNCTION TO CALL: %s\n", identifier);
+					exit(1);
+				}
+
+				// Call the function
+				fprintf(file_pointer, "    jal       a0, %s\n", identifier);
+
+				printf("IN DEVELOPMENT: EXPR_CALL other than 'print' and 'printf'\n");
 			}
 
 			store_reg1_on_stack = 0;

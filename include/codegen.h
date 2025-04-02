@@ -5,6 +5,8 @@
 
 #include "ast.h"
 
+AST_Func *func_lookup(AST_Func_List *list, char *identifier);
+
 int write_ast_to_riscv_file(char* filename, AST_Root* root, int target);
 
 void write_root_to_riscv_file (FILE *file_pointer, AST_Root *node);
