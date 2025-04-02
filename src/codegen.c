@@ -47,7 +47,7 @@ AST_Func *func_lookup
 		{
 			if (
 				strcmp(
-					current->function->func_declarator->declarator->identifier,
+					current->function->func_declarator->declarator.func_declarator.declarator->identifier,
 					identifier
 				)
 				== 0
@@ -135,7 +135,7 @@ void write_func_to_riscv_file
 	fprintf(file_pointer, ".text\n");
 
 	// Function name
-	char *identifier = function->func_declarator->declarator->identifier;
+	char *identifier = function->func_declarator->declarator.func_declarator.declarator->identifier;
 	fprintf(file_pointer, "%s:\n\n", identifier);
 
 	// If this is NOT the main function then we are in a function call
@@ -226,7 +226,7 @@ int write_symbol_table_to_riscv_file
 		fprintf(
 			file_pointer,
 			"# name: %s\n",
-			current->entry->declarator->declarator->identifier
+			current->entry->declarator->declarator.iden_declarator.declarator
 		);
 		fflush(file_pointer);
 
@@ -611,8 +611,9 @@ AST_Type *write_expr_to_riscv_file
 
 			if (entry == NULL)
 			{
-				printf("PANIC! CAN'T FIND IDENTIFIER!\n");
-				exit(1);
+				// printf("PANIC! CAN'T FIND IDENTIFIER!\n");
+				// exit(1);
+				printf("Can't find identifier in local symbol table. Trying parameter list...");
 			}
 
 			type_name = clone_type(entry->type);
@@ -745,8 +746,39 @@ AST_Type *write_expr_to_riscv_file
 					exit(1);
 				}
 
+				AST_Expr_List *expression_list = expression->expression.call_expression.args;
+
+				int argument_counter = 0;
+
+				while (expression_list != NULL)
+				{
+					if (expression_list->expression != NULL)
+					{
+						// Visit the expression & store it on stack
+						write_expr_to_riscv_file(file_pointer, expression_list->expression, table, 1);
+						++argument_counter;
+					}
+
+					// Get ready for the next argument
+					expression_list = expression_list->next;
+				}
+
+				// Write the number of bytes the arguments consume on the stack
+				// Also account for the fact that this value itself takes up
+				// a further BYTES_PER_TYPE amount of bytes
+				// This is why we add +1 prior to the multiplication
+				fprintf(file_pointer, "    addi      sp, sp, -%d\n", BYTES_PER_TYPE);
+				fprintf(file_pointer, "    addi      a0, zero, %d\n", BYTES_PER_TYPE * (argument_counter + 1));
+				fprintf(file_pointer, "    sw        a0, 0(sp)\n");
+
 				// Call the function
 				fprintf(file_pointer, "    jal       a0, %s\n", identifier);
+
+				// Afterwards, update the stack pointer *again* to get rid 
+				// of the function parameters that were previously stored on
+				// the stack
+				fprintf(file_pointer, "    lw        a0, 0(sp)\n");
+				fprintf(file_pointer, "    add       sp, sp, a0\n\n");
 
 				printf("IN DEVELOPMENT: EXPR_CALL other than 'print' and 'printf'\n");
 			}

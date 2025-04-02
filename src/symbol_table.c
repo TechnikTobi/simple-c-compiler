@@ -64,6 +64,8 @@ SymbolTableEntry *lookup(SymbolTable *table, char *identifier)
 {
 	SymbolTable *current = table;
 
+	if (table == NULL) return NULL;
+
 	do
 	{
 		if (current->entry == NULL) 
@@ -74,7 +76,7 @@ SymbolTableEntry *lookup(SymbolTable *table, char *identifier)
 		{
 			if (
 				strcmp(
-					current->entry->declarator->declarator->identifier,
+					current->entry->declarator->declarator.iden_declarator.declarator->identifier,
 					identifier
 				)
 				== 0
@@ -103,7 +105,7 @@ void print_symbol_table(SymbolTable *table, char* func_name)
 
 		printf("\n");
 		printf("Entry:\n");
-		printf("Symbol: %s\n", current->entry->declarator->declarator->identifier);
+		printf("Symbol: %s\n", current->entry->declarator->declarator.iden_declarator.declarator->identifier);
 		printf("Function: %s\n", current->entry->declarator->type == DECL_FUNC ? "YES" : "NO");
 
 		// Type Qualifier & Specifier
