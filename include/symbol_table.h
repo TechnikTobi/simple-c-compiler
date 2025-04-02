@@ -26,6 +26,8 @@ SymbolTable *new_symbol_table_from_decl_list(AST_Type *type, AST_Decl_List *decl
 SymbolTable *symbol_table_insert_end(SymbolTable *table, SymbolTableEntry *entry);
 SymbolTable *symbol_table_append_end(SymbolTable *table, SymbolTable *other);
 
+SymbolTable * combine_symbol_table_with_parameter_table(SymbolTable *table, int table_len, SymbolTable *parameter_table);
+
 SymbolTableEntry *lookup(SymbolTable *table, char *identifier);
 
 void print_symbol_table(SymbolTable *table, char* func_name);

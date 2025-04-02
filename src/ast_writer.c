@@ -176,7 +176,7 @@ void write_func_to_dot_file(FILE *file_pointer,	AST_Func *function, int this_nod
 		file_pointer, 
 		"%i [label=\"Function: \n\'%s\'\", fontname=\"%s\" ];\n", 
 		this_node_counter, 
-		function->func_declarator->declarator->identifier, 
+		function->func_declarator->declarator.func_declarator.declarator->identifier,
 		FONTNAME
 	);
 
@@ -190,7 +190,7 @@ void write_func_to_dot_file(FILE *file_pointer,	AST_Func *function, int this_nod
 
 	if (function->table != NULL)
 	{
-		print_symbol_table(function->table, function->func_declarator->declarator->identifier);
+		print_symbol_table(function->table, function->func_declarator->declarator.func_declarator.declarator->identifier);
 	}
 
 	// Body

@@ -280,6 +280,7 @@ declaration_specifiers
 	| modified_type_specifier declaration_specifiers                            { $$ = copy_to_type_from_type($1, $2); }
 	| type_qualifier                                                            { $$ = add_qualifier_or_specifier(new_empty_type(), $1); }
 	| type_qualifier declaration_specifiers                                     { $$ = add_qualifier_or_specifier($2, $1); }
+	| declaration_specifiers abstract_declarator                                { $$ = set_pointer_level($1, $2); }
 	;
 
 declarator_list

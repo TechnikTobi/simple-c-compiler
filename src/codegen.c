@@ -131,6 +131,13 @@ void write_func_to_riscv_file
 	// SymbolTable
 	int variable_area_size = write_symbol_table_to_riscv_file(file_pointer, function->table);
 
+	// Don't forget about the parameters!
+	function->table = combine_symbol_table_with_parameter_table(
+		function->table, 
+		variable_area_size, 
+		function->func_declarator->declarator.func_declarator.parameter_table
+	);
+
 	// Text section
 	fprintf(file_pointer, ".text\n");
 
@@ -226,7 +233,7 @@ int write_symbol_table_to_riscv_file
 		fprintf(
 			file_pointer,
 			"# name: %s\n",
-			current->entry->declarator->declarator.iden_declarator.declarator
+			current->entry->declarator->declarator.iden_declarator.declarator->identifier
 		);
 		fflush(file_pointer);
 
@@ -611,9 +618,8 @@ AST_Type *write_expr_to_riscv_file
 
 			if (entry == NULL)
 			{
-				// printf("PANIC! CAN'T FIND IDENTIFIER!\n");
-				// exit(1);
-				printf("Can't find identifier in local symbol table. Trying parameter list...");
+				printf("PANIC! CAN'T FIND IDENTIFIER: %s\n", expression->expression.identifier_expression->identifier);
+				exit(1);
 			}
 
 			type_name = clone_type(entry->type);

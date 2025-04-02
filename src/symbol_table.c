@@ -60,6 +60,56 @@ SymbolTable *symbol_table_insert_end(SymbolTable *table, SymbolTableEntry *entry
 	return symbol_table_append_end(table, new);
 }
 
+SymbolTable *combine_symbol_table_with_parameter_table(SymbolTable *table, int table_len, SymbolTable *parameter_table)
+{
+	// Note that the parameter table needs a different offset scheme than the
+	// actual symbol table.
+	// In the "normal" symbol table, the offset increases the later the 
+	// variable is declared.
+	// With the parameters, the first parameter is the first one being
+	// pushed on the stack, thus needing the largest offset, the latest the 
+	// smallest offset.
+	// Furthermore, this smallest offset is larger than the size of the symbol 
+	// table as we need to account for the following values being on the stack
+	// between these two areas:
+	// - the number of parameters (1x BYTES_PER_TYPE)
+	// - the old sp, a0 and s0 registers (3x BYTES_PER_TYPE)
+
+	if (parameter_table == NULL) 
+	{
+		return table;
+	}
+
+	// The table len is the number of symbols that we acquired upon writing
+	// the local symbol table to the output file and can be used to compute the
+	// smallest offset
+	int offset = table_len + (1 + 3) * 8;
+
+	// Get the last entry in the parameter table
+	SymbolTable *last = parameter_table;
+	while (last->next != NULL) last = last->next;
+
+	while (last->previous != NULL)
+	{
+		if (last->entry != NULL)
+		{
+			last->entry->stack_pointer_offset = offset;
+			offset += 8;
+		}
+
+		last = last->previous;
+	}
+
+	// Don't forget the first item in the parameter table!
+	if (last->entry != NULL)
+	{
+		last->entry->stack_pointer_offset = offset;
+	}
+
+	// Finally, append the parameter table to the symbol table
+	return symbol_table_append_end(table, parameter_table);
+}
+
 SymbolTableEntry *lookup(SymbolTable *table, char *identifier)
 {
 	SymbolTable *current = table;
@@ -97,6 +147,12 @@ SymbolTableEntry *lookup(SymbolTable *table, char *identifier)
 void print_symbol_table(SymbolTable *table, char* func_name)
 {
 	printf("\nStart of Symbol table for function \'%s\':\n", func_name);
+
+	if (table == NULL)
+	{
+		printf("EMPTY SYMBOL TABLE!\n");
+		return;
+	}
 
 	SymbolTable *current = table;
 	do
