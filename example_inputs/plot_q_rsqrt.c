@@ -48,10 +48,7 @@ main
 
     while (x < width)
     {
-        if (col_id >= width)
-        {
-            col_id = 0;
-        }
+        col_id = (col_id >= width) ? 0 : col_id;
 
         number = x * x_res;
 
@@ -75,9 +72,8 @@ main
                 /* do NOT use col_id in the condition statement! */
                 ++col_id;
             }
-            col_id = 0;
-
-            current_y = current_y - y_res;
+            col_id     = 0;
+            current_y -= y_res;
         }
 
         /* Correct row, fill blank space to the left */
@@ -93,7 +89,7 @@ main
     }
 
     /* Account for the "unfinished" row */
-    current_y = current_y - y_res;
+    current_y -= y_res;
 
     /* Fill blank rows */
     while (current_y > y_start)
@@ -103,9 +99,8 @@ main
             /* Write the RGB values */
             file_write(file, 255, 255, 255);
         }
-        col_id = 0;
-
-        current_y = current_y - y_res;
+        col_id     = 0;
+        current_y -= y_res;
     }
 
     print('d', 'o', 'n', 'e', '\n');
