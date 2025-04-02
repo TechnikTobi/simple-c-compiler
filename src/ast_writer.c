@@ -187,7 +187,11 @@ void write_func_to_dot_file(FILE *file_pointer,	AST_Func *function, int this_nod
 	// SymbolTable
 	fprintf(file_pointer, "%i [label=\"SymbolTable\n(not shown)\", fontname=\"%s\" ];\n", (*node_counter), FONTNAME);
 	write_parent_child_to_dot_file(file_pointer, this_node_counter, (*node_counter)++, NULL, -1);
-	print_symbol_table(function->table, function->func_declarator->declarator->identifier);
+
+	if (function->table != NULL)
+	{
+		print_symbol_table(function->table, function->func_declarator->declarator->identifier);
+	}
 
 	// Body
 	int child_body_node_counter = write_node_to_dot_file(file_pointer, function->body, AST_STAT, node_counter);
