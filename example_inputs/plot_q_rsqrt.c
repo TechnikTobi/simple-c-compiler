@@ -71,7 +71,9 @@ main
             {
                 /* Write the RGB values */
                 file_write(file, 255, 255, 255);
-                col_id = col_id + 1;
+
+                /* do NOT use col_id in the condition statement! */
+                ++col_id;
             }
             col_id = 0;
 
@@ -79,17 +81,15 @@ main
         }
 
         /* Correct row, fill blank space to the left */
-        while (col_id < x)
+        while (col_id++ < x)
         {
             file_write(file, 255, 255, 255);
-            col_id = col_id + 1;
         }
 
         /* Write plot point */
         file_write(file, 0, 255, 0);
-        col_id = col_id + 1;
 
-        x = x + 1;
+        ++x;
     }
 
     /* Account for the "unfinished" row */
@@ -98,11 +98,10 @@ main
     /* Fill blank rows */
     while (current_y > y_start)
     {
-        while (col_id < width)
+        while (col_id++ < width)
         {
             /* Write the RGB values */
             file_write(file, 255, 255, 255);
-            col_id = col_id + 1;
         }
         col_id = 0;
 
