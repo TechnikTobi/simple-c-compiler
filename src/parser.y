@@ -127,6 +127,9 @@ AST_Root *tree;
 %type <table>                          declaration_list;
 %type <table>                          declaration;
 
+%type <table>                          parameter_list;
+%type <table>                          parameter;
+
 %%
 
 primary_expression
@@ -352,7 +355,17 @@ pointer
 	;
 
 function_declarator
-	: IDENTIFIER '(' ')'                                                        { $$ = new_function_declarator($1); }
+	: IDENTIFIER '(' ')'                                                        { $$ = new_function_declarator($1, NULL); }
+	| IDENTIFIER '(' parameter_list ')'                                         { $$ = new_function_declarator($1, $3); }
+	;
+
+parameter_list
+	: parameter                                                                 { $$ = symbol_table_append_end(NULL, $1); }
+	| parameter parameter_list                                                  { $$ = symbol_table_append_end($1, $2); }
+	; 
+
+parameter
+	: declaration_specifiers declarator_list                                    { $$ = new_symbol_table_from_decl_list($1, $2); }
 	;
 
 statement

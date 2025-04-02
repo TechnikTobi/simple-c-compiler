@@ -45,11 +45,22 @@ struct
 S_AST_Decl
 {
 	EDeclaratorTypes         type;
-	AST_Iden                 *declarator;
+	union
+	{
+		struct
+		{
+			AST_Iden         *declarator;
+		} iden_declarator;
+		struct
+		{
+			AST_Iden         *declarator;
+			SymbolTable      *parameter_table;
+		} func_declarator;
+	} declarator;
 };
 
 AST_Decl *new_identifier_declarator(AST_Iden *identifier);
-AST_Decl *new_function_declarator(AST_Iden *identifier);
+AST_Decl *new_function_declarator(AST_Iden *identifier, SymbolTable *parameter_table);
 
 struct 
 S_AST_Decl_List

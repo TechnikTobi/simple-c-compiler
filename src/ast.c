@@ -152,14 +152,16 @@ AST_Decl *new_identifier_declarator(AST_Iden *identifier)
 {
 	AST_Decl *new = (AST_Decl*) malloc(sizeof(AST_Decl));
 	new->type = DECL_IDEN;
-	new->declarator = identifier;
+	new->declarator.iden_declarator.declarator = identifier;
 	return new;
 }
 
-AST_Decl *new_function_declarator(AST_Iden *identifier)
+AST_Decl *new_function_declarator(AST_Iden *identifier, SymbolTable *parameter_table)
 {
-	AST_Decl *new = new_identifier_declarator(identifier);
+	AST_Decl *new = (AST_Decl*) malloc(sizeof(AST_Decl));
 	new->type = DECL_FUNC;
+	new->declarator.func_declarator.declarator = identifier;
+	new->declarator.func_declarator.parameter_table = parameter_table;
 	return new;
 }
 
