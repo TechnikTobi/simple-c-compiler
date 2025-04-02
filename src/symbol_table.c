@@ -22,6 +22,7 @@ SymbolTable *new_symbol_table(SymbolTableEntry *entry)
 	new->entry = entry;
 	new->previous = NULL;
 	new->next = NULL;
+	new->size_without_parameter_table = -1;
 	return new;
 }
 

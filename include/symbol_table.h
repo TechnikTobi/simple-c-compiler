@@ -17,6 +17,7 @@ S_SymbolTable
 	SymbolTableEntry        *entry;
 	SymbolTable             *next;
 	SymbolTable             *previous;
+	int                     size_without_parameter_table;
 };
 
 SymbolTableEntry *new_symbol_table_entry(AST_Type *type, AST_Decl *declarator);
