@@ -33,7 +33,7 @@ main
     x      = 0;
 
     /* Setup for writing to image file */
-    file = file_open("plot.ppm");
+    file = file_open("plot_q_rsqrt.ppm");
 
     /* 
     Write image header:
