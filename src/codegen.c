@@ -11,8 +11,8 @@
 
 #define REG_0(typename) (typename->type == PRIM_DOUBLE ? "fa0" : "a0")
 #define REG_1(typename) (typename->type == PRIM_DOUBLE ? "fa1" : "a1")
-#define LOAD(typename)  (typename->type == PRIM_DOUBLE ? "flw" : "lw ")
-#define STORE(typename) (typename->type == PRIM_DOUBLE ? "fsw" : "sw ")
+#define LOAD(typename)  (typename->type == PRIM_DOUBLE ? "flw" : (TARGET == 2 ? "ld" : "lw"))
+#define STORE(typename) (typename->type == PRIM_DOUBLE ? "fsw" : (TARGET == 2 ? "sd" : "sw"))
 
 // Depending on the target, either use single word or double word load/store
 // instructions. Single word causes problems with Spike, as registers are 
@@ -650,7 +650,6 @@ AST_Type *write_expr_to_riscv_file
 			{
 				fprintf(file_pointer, "    add       a1, zero, sp\n");
 				type_name = new_type(PRIM_INT);
-				break;
 			}
 			else if
 			(
@@ -659,7 +658,6 @@ AST_Type *write_expr_to_riscv_file
 			{
 				fprintf(file_pointer, "    add       a1, zero, s0\n");
 				type_name = new_type(PRIM_INT);
-				break;
 			}
 			else if
 			(
@@ -668,21 +666,22 @@ AST_Type *write_expr_to_riscv_file
 			{
 				fprintf(file_pointer, "    add       a1, zero, a0\n");
 				type_name = new_type(PRIM_INT);
-				break;
 			}
-
-			entry = lookup(table, expression->expression.identifier_expression->identifier);
-
-			if (entry == NULL)
+			else
 			{
-				printf("PANIC! CAN'T FIND IDENTIFIER: %s\n", expression->expression.identifier_expression->identifier);
-				exit(1);
+				entry = lookup(table, expression->expression.identifier_expression->identifier);
+
+				if (entry == NULL)
+				{
+					printf("PANIC! CAN'T FIND IDENTIFIER: %s\n", expression->expression.identifier_expression->identifier);
+					exit(1);
+				}
+
+				type_name = clone_type(entry->type);
+
+				fprintf(file_pointer, "# Reading '%s'\n", expression->expression.identifier_expression->identifier);
+				fprintf(file_pointer, "    %s       %s, %d(s0)\n", LOAD(type_name), REG_1(type_name), entry->stack_pointer_offset);
 			}
-
-			type_name = clone_type(entry->type);
-
-			fprintf(file_pointer, "# Reading '%s'\n", expression->expression.identifier_expression->identifier);
-			fprintf(file_pointer, "    %s       %s, %d(s0)\n", LOAD(type_name), REG_1(type_name), entry->stack_pointer_offset);
 
 			store_reg1_on_stack = 1;
 			break;

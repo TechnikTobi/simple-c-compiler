@@ -77,6 +77,7 @@ AST_Root *tree;
 %type <type>                           type_specifier;
 %type <type>                           modified_type_specifier;
 %type <type>                           declaration_specifiers;
+%type <type>                           declaration_specifiers_with_opt_ptr;
 %type <type>                           specifier_qualifier_list;
 
 %type <uint_value>                     abstract_declarator;
@@ -270,8 +271,12 @@ constant_expression
 	;
 
 declaration
-	: declaration_specifiers declarator_list ';'                                { $$ = new_symbol_table_from_decl_list($1, $2); }
+	: declaration_specifiers_with_opt_ptr declarator_list ';'                   { $$ = new_symbol_table_from_decl_list($1, $2); }
 	;
+
+declaration_specifiers_with_opt_ptr
+	: declaration_specifiers                                                    { $$ = $1; }
+	| declaration_specifiers abstract_declarator                                { $$ = set_pointer_level($1, $2); }
 
 declaration_specifiers
 	: storage_class_specifier                                                   { $$ = add_qualifier_or_specifier(new_empty_type(), $1); }
@@ -280,7 +285,6 @@ declaration_specifiers
 	| modified_type_specifier declaration_specifiers                            { $$ = copy_to_type_from_type($1, $2); }
 	| type_qualifier                                                            { $$ = add_qualifier_or_specifier(new_empty_type(), $1); }
 	| type_qualifier declaration_specifiers                                     { $$ = add_qualifier_or_specifier($2, $1); }
-	| declaration_specifiers abstract_declarator                                { $$ = set_pointer_level($1, $2); }
 	;
 
 declarator_list
@@ -362,11 +366,11 @@ function_declarator
 
 parameter_list
 	: parameter                                                                 { $$ = symbol_table_append_end(NULL, $1); }
-	| parameter parameter_list                                                  { $$ = symbol_table_append_end($1, $2); }
+	| parameter_list ',' parameter                                              { $$ = symbol_table_append_end($3, $1); }
 	; 
 
 parameter
-	: declaration_specifiers declarator_list                                    { $$ = new_symbol_table_from_decl_list($1, $2); }
+	: declaration_specifiers_with_opt_ptr declarator                            { $$ = new_symbol_table_from_decl_list($1, decl_list_append(NULL, $2)); }
 	;
 
 statement
@@ -442,7 +446,7 @@ function_definition_list
 	;
 
 function_definition
-	: declaration_specifiers function_declarator function_compound_statement    { $$ = new_func($1, $2, $3); }
+	: declaration_specifiers_with_opt_ptr function_declarator function_compound_statement { $$ = new_func($1, $2, $3); }
 	| function_declarator function_compound_statement                           { $$ = new_func(NULL, $1, $2); }
 	;
 
