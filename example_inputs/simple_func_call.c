@@ -6,13 +6,11 @@ int main()
     a = 130;
     b = 124;
 
-    /* print('\n', 'a', '0', _A0, ' ', 's', 'p', _SP, ' ', 's', '0', _S0, '\n'); */
     print_regs(_A0, _SP, _S0);
 
     print('x', ' ');
     spike_print(test(&b));
 
-    /* print('\n', 'a', '0', _A0, ' ', 's', 'p', _SP, ' ', 's', '0', _S0, '\n'); */
     print_regs(_A0, _SP, _S0);
 
     spike_print(a);
@@ -26,17 +24,15 @@ int test(int* n)
     
     print_regs(_A0, _SP, _S0);
 
-    /*
     print('y', ' ');
     spike_print(*n);
     print('t');
     print('\n');
-    */
 
     return 747;
 }
 
-void print_regs(int a0, sp, s0)
+void print_regs(int a0, int sp, int s0)
 {
     print('\n', 'a', '0', '=');
     spike_print_hex(a0);
@@ -73,7 +69,6 @@ void spike_print_hex(int n)
 
     return;
 }
-
 
 void spike_print(int n)
 {
