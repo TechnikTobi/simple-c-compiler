@@ -14,6 +14,12 @@
 #define LOAD(typename)  (typename->type == PRIM_DOUBLE ? "flw" : "lw ")
 #define STORE(typename) (typename->type == PRIM_DOUBLE ? "fsw" : "sw ")
 
+// Depending on the target, either use single word or double word load/store
+// instructions. Single word causes problems with Spike, as registers are 
+// double word wide, while RARS does not support ld/sd and requires lw/sw
+#define LOAD_CTRL_REG  (TARGET == 2 ? "ld" : "lw")
+#define STORE_CTRL_REG (TARGET == 2 ? "sd" : "sw")
+
 static int FOR_COUNTER = 0;
 static int WHILE_COUNTER = 0;
 static int ELSE_COUNTER = 0;
@@ -165,15 +171,15 @@ void write_func_to_riscv_file
 		fprintf(file_pointer, "# Store current sp, a0 and s0 on stack\n");
 		fprintf(file_pointer, "    add       a1, zero, sp\n");
 		fprintf(file_pointer, "    addi      sp, sp, -%d\n", BYTES_PER_TYPE);
-		fprintf(file_pointer, "    sw        a1, 0(sp)\n");
+		fprintf(file_pointer, "    %s        a1, 0(sp)\n", STORE_CTRL_REG);
 
 		// Store the current a0 register on the stack
 		fprintf(file_pointer, "    addi      sp, sp, -%d\n", BYTES_PER_TYPE);
-		fprintf(file_pointer, "    sw        a0, 0(sp)\n");
+		fprintf(file_pointer, "    %s        a0, 0(sp)\n", STORE_CTRL_REG);
 
 		// Store the current s0 register on the stack
 		fprintf(file_pointer, "    addi      sp, sp, -%d\n", BYTES_PER_TYPE);
-		fprintf(file_pointer, "    sw        s0, 0(sp)\n\n");
+		fprintf(file_pointer, "    %s        s0, 0(sp)\n\n", STORE_CTRL_REG);
 	}
 
 	// Setup sp & s0
@@ -199,13 +205,13 @@ void write_func_to_riscv_file
 		fprintf(file_pointer, "    addi      sp, s0, %d\n", variable_area_size);
 
 		// Restore s0
-		fprintf(file_pointer, "    lw        s0, %d(sp)\n", BYTES_PER_TYPE * 0);
+		fprintf(file_pointer, "    %s        s0, %d(sp)\n", LOAD_CTRL_REG, BYTES_PER_TYPE * 0);
 
 		// Restore a0
-		fprintf(file_pointer, "    lw        a0, %d(sp)\n", BYTES_PER_TYPE * 1);
+		fprintf(file_pointer, "    %s        a0, %d(sp)\n", LOAD_CTRL_REG, BYTES_PER_TYPE * 1);
 
 		// Restore sp - first into a2, then into sp
-		fprintf(file_pointer, "    lw        a2, %d(sp)\n", BYTES_PER_TYPE * 2);
+		fprintf(file_pointer, "    %s        a2, %d(sp)\n", LOAD_CTRL_REG, BYTES_PER_TYPE * 2);
 		fprintf(file_pointer, "    add       sp, zero, a2\n");
 
 		// Finally, jump to the caller
@@ -304,6 +310,7 @@ void write_stat_to_riscv_file
 	{
 		case STAT_EXPR:
 			// Visit the expression
+			printf("free STAT_EXPR 1/1\n"); fflush(stdout);
 			free(write_expr_to_riscv_file(file_pointer, statement->statement.expression, table, 0));
 			break;
 
@@ -318,6 +325,7 @@ void write_stat_to_riscv_file
 		
 		case STAT_IF:
 			// Visit child node first - puts result onto stack
+			printf("free STAT_IF 1/1;\n"); fflush(stdout);
 			free(write_expr_to_riscv_file(file_pointer, statement->statement.if_statement.condition, table, 0));
 
 			endif_value = ENDIF_COUNTER++;
@@ -336,6 +344,7 @@ void write_stat_to_riscv_file
 
 		case STAT_IF_ELSE:
 			// Visit child node with condition expression first - puts result onto stack
+			printf("free STAT_IF_ELSE 1/1;\n"); fflush(stdout);
 			free(write_expr_to_riscv_file(file_pointer, statement->statement.if_else_statement.condition, table, 0));
 
 			// Write the boolean check and branching jump
@@ -365,6 +374,7 @@ void write_stat_to_riscv_file
 
 		case STAT_FOR:
 			// Visit the initial init expression - Remember that this goes out of scope!
+			printf("free STAT_FOR 1/5;\n"); fflush(stdout);
 			free(write_expr_to_riscv_file(file_pointer, statement->statement.for_statement.init_expression, table, 0));
 
 			// Write the "header" of the for loop
@@ -378,6 +388,7 @@ void write_stat_to_riscv_file
 			NEXT_CONTINUE = construct_string("updatefor", for_value);
 
 			// Write the condition check
+			printf("free STAT_FOR 2/5;\n"); fflush(stdout);
 			free(write_expr_to_riscv_file(file_pointer, statement->statement.for_statement.condition, table, 0));
 
 			// Write the boolean check and branching jump
@@ -388,6 +399,7 @@ void write_stat_to_riscv_file
 
 			// Write update expression with label to jump to in case of continue
 			fprintf(file_pointer, ".updatefor%d:\n", for_value);
+			printf("free STAT_FOR 3/5;\n"); fflush(stdout);
 			free(write_expr_to_riscv_file(file_pointer, statement->statement.for_statement.update_expression, table, 0));
 
 			// Jump to the start with the condition check
@@ -398,8 +410,12 @@ void write_stat_to_riscv_file
 			fprintf(file_pointer, ".endfor%d:\n    nop\n", for_value);
 
 			// Cleanup
+			printf("free STAT_FOR 4/5;\n"); fflush(stdout);
 			free(NEXT_BREAK);
+
+			printf("free STAT_FOR 5/5;\n"); fflush(stdout);
 			free(NEXT_CONTINUE);
+
 			NEXT_BREAK = break_backup;
 			NEXT_CONTINUE = continue_backup;
 
@@ -417,6 +433,7 @@ void write_stat_to_riscv_file
 			NEXT_CONTINUE = construct_string("while", while_value);
 
 			// Write the condition check
+			printf("free STAT_WHILE 1/3;\n"); fflush(stdout);
 			free(write_expr_to_riscv_file(file_pointer, statement->statement.while_statement.condition, table, 0));
 
 			// Write the boolean check and branching jump
@@ -432,8 +449,12 @@ void write_stat_to_riscv_file
 			fprintf(file_pointer, ".endwhile%d:\n    nop\n", while_value);
 
 			// Cleanup
+			printf("free STAT_WHILE 2/3;\n"); fflush(stdout);
 			free(NEXT_BREAK);
+
+			printf("free STAT_WHILE 3/3;\n"); fflush(stdout);
 			free(NEXT_CONTINUE);
+
 			NEXT_BREAK = break_backup;
 			NEXT_CONTINUE = continue_backup;
 
@@ -455,6 +476,8 @@ void write_stat_to_riscv_file
 
 			// Write the condition check with label for jump in case of continue
 			fprintf(file_pointer, ".whilecond%d:\n", while_value);
+
+			printf("free STAT_DO_WHILE 1/3;\n"); fflush(stdout);
 			free(write_expr_to_riscv_file(file_pointer, statement->statement.do_while_statement.condition, table, 0));
 
 			// Put one into the other register
@@ -467,8 +490,12 @@ void write_stat_to_riscv_file
 			fprintf(file_pointer, ".endwhile%d:\n    nop\n", while_value);
 
 			// Cleanup
+			printf("free STAT_DO_WHILE 2/3;\n"); fflush(stdout);
 			free(NEXT_BREAK);
+
+			printf("free STAT_DO_WHILE 3/3;\n"); fflush(stdout);
 			free(NEXT_CONTINUE);
+
 			NEXT_BREAK = break_backup;
 			NEXT_CONTINUE = continue_backup;
 
@@ -492,6 +519,7 @@ void write_stat_to_riscv_file
 
 		case STAT_RETURN_EXPR:
 			// Writes the expression / its result into (f)a1
+			printf("free STAT_RETURN_EXPR 1/1;\n"); fflush(stdout);
 			free(write_expr_to_riscv_file(file_pointer, statement->statement.expression, table, 0));
 
 			// no break here intentional 
@@ -505,13 +533,13 @@ void write_stat_to_riscv_file
 			fprintf(file_pointer, "    addi      sp, s0, %d\n", variable_area_size);
 
 			// Restore s0
-			fprintf(file_pointer, "    lw        s0, %d(sp)\n", BYTES_PER_TYPE * 0);
+			fprintf(file_pointer, "    %s        s0, %d(sp)\n", LOAD_CTRL_REG, BYTES_PER_TYPE * 0);
 
 			// Restore a0
-			fprintf(file_pointer, "    lw        a0, %d(sp)\n", BYTES_PER_TYPE * 1);
+			fprintf(file_pointer, "    %s        a0, %d(sp)\n", LOAD_CTRL_REG, BYTES_PER_TYPE * 1);
 
 			// Restore sp - first into a2, then into sp
-			fprintf(file_pointer, "    lw        a2, %d(sp)\n", BYTES_PER_TYPE * 2);
+			fprintf(file_pointer, "    %s        a2, %d(sp)\n", LOAD_CTRL_REG, BYTES_PER_TYPE * 2);
 			fprintf(file_pointer, "    add       sp, zero, a2\n");
 
 			// Finally, jump to the caller
@@ -673,6 +701,7 @@ AST_Type *write_expr_to_riscv_file
 
 		case EXPR_TERNARY:
 			// Visit child node with condition expression first - puts result onto stack
+			printf("free EXPR_TERNARY 1/2;\n"); fflush(stdout);
 			free(write_expr_to_riscv_file(file_pointer, expression->expression.ternary_expression.condition, table, 0));
 
 			// Put one into the other register
@@ -693,6 +722,7 @@ AST_Type *write_expr_to_riscv_file
 			fprintf(file_pointer, ".ternaryelse%d:\n", ternary_else_value);
 
 			// Visit else-body
+			printf("free EXPR_TERNARY 2/2;\n"); fflush(stdout);
 			free(write_expr_to_riscv_file(file_pointer, expression->expression.ternary_expression.else_expression, table, 0));
 
 			// After visiting the else-body, jump to the endif
@@ -709,7 +739,7 @@ AST_Type *write_expr_to_riscv_file
 			printf("IN DEVELOPMENT: EXPR_CAST\n");
 
 			// TODO: ACTUALLY A LOT MORE THAN JUST CHANGING THE TYPE!
-
+			printf("free EXPR_CAST 1/1;\n"); fflush(stdout);
 			free(write_expr_to_riscv_file(file_pointer, expression->expression.cast_expression.expression, table, 0));
 			type_name = clone_type(expression->expression.cast_expression.type);
 
@@ -804,7 +834,7 @@ AST_Type *write_expr_to_riscv_file
 				// This is why we add +1 prior to the multiplication
 				fprintf(file_pointer, "    addi      sp, sp, -%d\n", BYTES_PER_TYPE);
 				fprintf(file_pointer, "    addi      a0, zero, %d\n", BYTES_PER_TYPE * (argument_counter + 1));
-				fprintf(file_pointer, "    sw        a0, 0(sp)\n");
+				fprintf(file_pointer, "    %s        a0, 0(sp)\n", STORE_CTRL_REG);
 
 				// Call the function
 				fprintf(file_pointer, "    jal       a0, %s\n", identifier);
@@ -812,15 +842,15 @@ AST_Type *write_expr_to_riscv_file
 				// Afterwards, update the stack pointer *again* to get rid 
 				// of the function parameters that were previously stored on
 				// the stack
-				fprintf(file_pointer, "    lw        a0, 0(sp)\n");
+				fprintf(file_pointer, "    %s        a0, 0(sp)\n", LOAD_CTRL_REG);
 				fprintf(file_pointer, "    add       sp, sp, a0\n\n");
 
-				type_name = func->return_type;
+				type_name = clone_type(func->return_type);
 
 				printf("IN DEVELOPMENT: EXPR_CALL other than 'print' and 'printf'\n");
 			}
 
-			store_reg1_on_stack = 0;
+			store_reg1_on_stack = 1;
 			break;
 
 		case EXPR_SIZEOF_EXPR:
@@ -1343,7 +1373,10 @@ AST_Type *write_binary_expr_to_riscv_file
 		fprintf(file_pointer, "    %s       %s, 0(sp)\n\n", STORE(type_name), REG_1(type_name));
 	}
 
+	printf("free l_type\n"); fflush(stdout);
 	free(l_type);
+
+	printf("free r_type\n"); fflush(stdout);
 	free(r_type);
 
 	return type_name;
