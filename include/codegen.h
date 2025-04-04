@@ -22,11 +22,12 @@ AST_Type *write_binary_expr_to_riscv_file (FILE *file_pointer, AST_Expr *express
 
 void write_equals_check_and_branch (FILE *file_pointer,	char *base_jump_type, int jump_counter);
 
-void write_print_expression      (FILE *file_pointer,	AST_Expr *expression, SymbolTable *table);
-void write_file_write_expression (FILE *file_pointer,	AST_Expr *expression, SymbolTable *table);
-void write_file_open_expression  (FILE *file_pointer,	AST_Expr *expression, SymbolTable *table);
-void write_file_close_expression (FILE *file_pointer,	AST_Expr *expression, SymbolTable *table);
-void write_exit_expression       (FILE *file_pointer,	AST_Expr *expression, SymbolTable *table);
+void write_malloc_expression     (FILE *file_pointer, AST_Expr *expression, SymbolTable *table);
+void write_print_expression      (FILE *file_pointer, AST_Expr *expression, SymbolTable *table);
+void write_file_write_expression (FILE *file_pointer, AST_Expr *expression, SymbolTable *table);
+void write_file_open_expression  (FILE *file_pointer, AST_Expr *expression, SymbolTable *table);
+void write_file_close_expression (FILE *file_pointer, AST_Expr *expression, SymbolTable *table);
+void write_exit_expression       (FILE *file_pointer, AST_Expr *expression, SymbolTable *table);
 
 char *construct_string (char* string, int value);
 
