@@ -20,6 +20,8 @@
 #define LOAD_CTRL_REG  (TARGET == 2 ? "ld" : "lw")
 #define STORE_CTRL_REG (TARGET == 2 ? "sd" : "sw")
 
+#define print_free(freeing_at) // printf("free %s", freeing_at); fflush(stdout);
+
 static int FOR_COUNTER = 0;
 static int WHILE_COUNTER = 0;
 static int ELSE_COUNTER = 0;
@@ -306,11 +308,12 @@ void write_stat_to_riscv_file
 
 	int variable_area_size = 0;
 
+
 	switch (statement->statement_type)
 	{
 		case STAT_EXPR:
 			// Visit the expression
-			printf("free STAT_EXPR 1/1\n"); fflush(stdout);
+			print_free("STAT_EXPR 1/1\n");
 			free(write_expr_to_riscv_file(file_pointer, statement->statement.expression, table, 0));
 			break;
 
@@ -325,7 +328,7 @@ void write_stat_to_riscv_file
 		
 		case STAT_IF:
 			// Visit child node first - puts result onto stack
-			printf("free STAT_IF 1/1;\n"); fflush(stdout);
+			print_free("STAT_IF 1/1;\n");
 			free(write_expr_to_riscv_file(file_pointer, statement->statement.if_statement.condition, table, 0));
 
 			endif_value = ENDIF_COUNTER++;
@@ -344,7 +347,7 @@ void write_stat_to_riscv_file
 
 		case STAT_IF_ELSE:
 			// Visit child node with condition expression first - puts result onto stack
-			printf("free STAT_IF_ELSE 1/1;\n"); fflush(stdout);
+			print_free("STAT_IF_ELSE 1/1;\n");
 			free(write_expr_to_riscv_file(file_pointer, statement->statement.if_else_statement.condition, table, 0));
 
 			// Write the boolean check and branching jump
@@ -374,7 +377,7 @@ void write_stat_to_riscv_file
 
 		case STAT_FOR:
 			// Visit the initial init expression - Remember that this goes out of scope!
-			printf("free STAT_FOR 1/5;\n"); fflush(stdout);
+			print_free("STAT_FOR 1/5;\n");
 			free(write_expr_to_riscv_file(file_pointer, statement->statement.for_statement.init_expression, table, 0));
 
 			// Write the "header" of the for loop
@@ -388,7 +391,7 @@ void write_stat_to_riscv_file
 			NEXT_CONTINUE = construct_string("updatefor", for_value);
 
 			// Write the condition check
-			printf("free STAT_FOR 2/5;\n"); fflush(stdout);
+			print_free("STAT_FOR 2/5;\n");
 			free(write_expr_to_riscv_file(file_pointer, statement->statement.for_statement.condition, table, 0));
 
 			// Write the boolean check and branching jump
@@ -399,7 +402,7 @@ void write_stat_to_riscv_file
 
 			// Write update expression with label to jump to in case of continue
 			fprintf(file_pointer, ".updatefor%d:\n", for_value);
-			printf("free STAT_FOR 3/5;\n"); fflush(stdout);
+			print_free("STAT_FOR 3/5;\n");
 			free(write_expr_to_riscv_file(file_pointer, statement->statement.for_statement.update_expression, table, 0));
 
 			// Jump to the start with the condition check
@@ -410,10 +413,10 @@ void write_stat_to_riscv_file
 			fprintf(file_pointer, ".endfor%d:\n    nop\n", for_value);
 
 			// Cleanup
-			printf("free STAT_FOR 4/5;\n"); fflush(stdout);
+			print_free("STAT_FOR 4/5;\n");
 			free(NEXT_BREAK);
 
-			printf("free STAT_FOR 5/5;\n"); fflush(stdout);
+			print_free("STAT_FOR 5/5;\n");
 			free(NEXT_CONTINUE);
 
 			NEXT_BREAK = break_backup;
@@ -433,7 +436,7 @@ void write_stat_to_riscv_file
 			NEXT_CONTINUE = construct_string("while", while_value);
 
 			// Write the condition check
-			printf("free STAT_WHILE 1/3;\n"); fflush(stdout);
+			print_free("STAT_WHILE 1/3;\n");
 			free(write_expr_to_riscv_file(file_pointer, statement->statement.while_statement.condition, table, 0));
 
 			// Write the boolean check and branching jump
@@ -449,10 +452,10 @@ void write_stat_to_riscv_file
 			fprintf(file_pointer, ".endwhile%d:\n    nop\n", while_value);
 
 			// Cleanup
-			printf("free STAT_WHILE 2/3;\n"); fflush(stdout);
+			print_free("STAT_WHILE 2/3;\n");
 			free(NEXT_BREAK);
 
-			printf("free STAT_WHILE 3/3;\n"); fflush(stdout);
+			print_free("STAT_WHILE 3/3;\n");
 			free(NEXT_CONTINUE);
 
 			NEXT_BREAK = break_backup;
@@ -477,7 +480,7 @@ void write_stat_to_riscv_file
 			// Write the condition check with label for jump in case of continue
 			fprintf(file_pointer, ".whilecond%d:\n", while_value);
 
-			printf("free STAT_DO_WHILE 1/3;\n"); fflush(stdout);
+			print_free("STAT_DO_WHILE 1/3;\n");
 			free(write_expr_to_riscv_file(file_pointer, statement->statement.do_while_statement.condition, table, 0));
 
 			// Put one into the other register
@@ -490,10 +493,10 @@ void write_stat_to_riscv_file
 			fprintf(file_pointer, ".endwhile%d:\n    nop\n", while_value);
 
 			// Cleanup
-			printf("free STAT_DO_WHILE 2/3;\n"); fflush(stdout);
+			print_free("STAT_DO_WHILE 2/3;\n");
 			free(NEXT_BREAK);
 
-			printf("free STAT_DO_WHILE 3/3;\n"); fflush(stdout);
+			print_free("STAT_DO_WHILE 3/3;\n");
 			free(NEXT_CONTINUE);
 
 			NEXT_BREAK = break_backup;
@@ -519,7 +522,7 @@ void write_stat_to_riscv_file
 
 		case STAT_RETURN_EXPR:
 			// Writes the expression / its result into (f)a1
-			printf("free STAT_RETURN_EXPR 1/1;\n"); fflush(stdout);
+			print_free("STAT_RETURN_EXPR 1/1;\n");
 			free(write_expr_to_riscv_file(file_pointer, statement->statement.expression, table, 0));
 
 			// no break here intentional 
@@ -700,7 +703,7 @@ AST_Type *write_expr_to_riscv_file
 
 		case EXPR_TERNARY:
 			// Visit child node with condition expression first - puts result onto stack
-			printf("free EXPR_TERNARY 1/2;\n"); fflush(stdout);
+			print_free("EXPR_TERNARY 1/2;\n");
 			free(write_expr_to_riscv_file(file_pointer, expression->expression.ternary_expression.condition, table, 0));
 
 			// Put one into the other register
@@ -721,7 +724,7 @@ AST_Type *write_expr_to_riscv_file
 			fprintf(file_pointer, ".ternaryelse%d:\n", ternary_else_value);
 
 			// Visit else-body
-			printf("free EXPR_TERNARY 2/2;\n"); fflush(stdout);
+			print_free("EXPR_TERNARY 2/2;\n");
 			free(write_expr_to_riscv_file(file_pointer, expression->expression.ternary_expression.else_expression, table, 0));
 
 			// After visiting the else-body, jump to the endif
@@ -738,7 +741,7 @@ AST_Type *write_expr_to_riscv_file
 			printf("IN DEVELOPMENT: EXPR_CAST\n");
 
 			// TODO: ACTUALLY A LOT MORE THAN JUST CHANGING THE TYPE!
-			printf("free EXPR_CAST 1/1;\n"); fflush(stdout);
+			print_free("EXPR_CAST 1/1;\n");
 			free(write_expr_to_riscv_file(file_pointer, expression->expression.cast_expression.expression, table, 0));
 			type_name = clone_type(expression->expression.cast_expression.type);
 
@@ -763,7 +766,15 @@ AST_Type *write_expr_to_riscv_file
 		case EXPR_CALL:
 			identifier = expression->expression.call_expression.expression->expression.identifier_expression->identifier;
 
-			if 
+			if
+			(
+				strcmp(identifier, "malloc") == 0
+			)
+			{
+				write_malloc_expression(file_pointer, expression, table);
+				type_name = set_pointer_level(new_type(PRIM_INT), 1);
+			}
+			else if 
 			(
 				strcmp(identifier, "print") == 0 || strcmp(identifier, "printf") == 0
 			)
@@ -1096,6 +1107,8 @@ AST_Type *write_binary_expr_to_riscv_file
 	fprintf(file_pointer, "# VISIT RIGHT\n");
 	r_type = write_expr_to_riscv_file(file_pointer, expression->expression.binary_expression.right, table, 0);
 
+	// Result of right expression is now in a1
+
 	fprintf(file_pointer, "# Load left into (f)a0 (except for assignments) - right already is in (f)a1 due to call with 'write_to_stack' set to 0\n");
 
 	// Again, we don't need to do this for assignments
@@ -1143,22 +1156,64 @@ AST_Type *write_binary_expr_to_riscv_file
 	switch (expression->expression.binary_expression.operation)
 	{
 		case ASSIGNMENT:
-			// Check that left side is a symbol
-			if (expression->expression.binary_expression.left->expression_type != EXPR_IDENTIFIER)
+
+			// Store result of right expression on stack as e.g. dereferencing
+			// the left side may overwrite the contents of reg_1
+			fprintf(file_pointer, "# Store result of right expression on stack\n");
+			fprintf(file_pointer, "    addi      sp, sp, -%d\n", BYTES_PER_TYPE);
+			fprintf(file_pointer, "    %s       %s, 0(sp)\n\n", STORE(r_type), REG_1(r_type));
+
+			if 
+			(
+				// Check that the left side is a deref - part 1
+				expression->expression.binary_expression.left->expression_type == EXPR_UNARY
+			)
 			{
-				printf("ERROR: Expected an identifier on the left hand side of an assignment!");
+				if 
+				(
+					// Check that the left side is a deref - part 2
+					expression->expression.binary_expression.left->expression.unary_expression.operation != DEREF
+				)
+				{
+					printf("ERROR: Expected unary expression on left hand size to be a deref expression!\n");
+					return type_name;
+				}
+
+				// Visit expression to determine address in case there is e.g.
+				// some pointer arithmetic 
+				l_type = write_expr_to_riscv_file(file_pointer, expression->expression.binary_expression.left->expression.unary_expression.operand, table, 0);
+			}
+			else if
+			(
+				// Check that left side is a symbol
+				expression->expression.binary_expression.left->expression_type == EXPR_IDENTIFIER
+			)
+			{
+				// Find the left symbol in the symbol table
+				entry = lookup(table, expression->expression.binary_expression.left->expression.identifier_expression->identifier);
+
+				if (entry == NULL)
+				{
+					printf("ERROR: Could not find symbol table entry!\n"); fflush(stdin);
+				}
+
+				// Compute address based on entry offset
+				fprintf(file_pointer, "    addi      a1, s0, %d\n", entry->stack_pointer_offset);
+
+				l_type = clone_type(entry->type);
+			}
+			else
+			{
+				printf("ERROR: Expected an identifier or deref on the left hand side of an assignment!\n");
 				return type_name;
 			}
 
-			// Find the left symbol in the symbol table
-			entry = lookup(table, expression->expression.binary_expression.left->expression.identifier_expression->identifier);
-
-			if (entry == NULL)
-			{
-				printf("ERROR: Could not find symbol table entry!\n"); fflush(stdin);
-			}
-
-			l_type = clone_type(entry->type);
+			// a1 now contains an address
+			// Load right expression from stack into reg_0
+			// This is a bit different from the rest of the function where
+			// reg_0 usually contains the left expression, not the right one
+			fprintf(file_pointer, "    %s       %s, 0(sp)\n", LOAD(r_type), REG_0(r_type)); // Right expression
+			fprintf(file_pointer, "    addi      sp, sp, %d\n\n", BYTES_PER_TYPE);
 
 			// Check that types are compatible
 			if (l_type->type != r_type->type)
@@ -1168,11 +1223,11 @@ AST_Type *write_binary_expr_to_riscv_file
 
 				if (l_type->type == PRIM_DOUBLE && r_type->type == PRIM_INT)  // int->double
 				{
-					fprintf(file_pointer, "    fcvt.s.w   fa1, a1\n");
+					fprintf(file_pointer, "    fcvt.s.w   fa0, a0\n");
 				}
 				else if (l_type->type == PRIM_INT && r_type->type == PRIM_DOUBLE)  // double->int
 				{
-					fprintf(file_pointer, "    fcvt.w.s   a1, fa1\n");
+					fprintf(file_pointer, "    fcvt.w.s   a0, fa0\n");
 				}
 				else if 
 				(
@@ -1185,15 +1240,16 @@ AST_Type *write_binary_expr_to_riscv_file
 				}
 				else
 				{
-					printf("ASSIGNMENT ERROR: Can't write Assignment due non-existant conversion rule!\n");
+					printf("ASSIGNMENT ERROR: Can't write Assignment due to non-existant conversion rule!\n");
 					return type_name;
 				}
 			}
 
-			// Store reg_1 into the variable
+			// Store reg_0 at the address in a1
 			fprintf(file_pointer, "# Assignment\n");
-			fprintf(file_pointer, "    %s       %s, %d(s0)\n", STORE(l_type), REG_1(l_type), entry->stack_pointer_offset);
+			fprintf(file_pointer, "    %s       %s, (a1)\n", STORE(l_type), REG_0(l_type));
 			fflush(file_pointer);
+
 			type_name = clone_type(r_type);
 			break;
 
@@ -1372,13 +1428,90 @@ AST_Type *write_binary_expr_to_riscv_file
 		fprintf(file_pointer, "    %s       %s, 0(sp)\n\n", STORE(type_name), REG_1(type_name));
 	}
 
-	printf("free l_type\n"); fflush(stdout);
+	print_free("l_type\n");
 	free(l_type);
 
-	printf("free r_type\n"); fflush(stdout);
+	print_free("r_type\n");
 	free(r_type);
 
 	return type_name;
+}
+
+
+void
+write_malloc_expression
+(
+	FILE *file_pointer,	
+	AST_Expr *expression, 
+	SymbolTable *table
+)
+{
+	if (TARGET != 1 && TARGET != 2)
+	{
+		printf("FILE ERROR: Only supported by RARS and Spike!\n"); return;
+	}
+
+	AST_Expr_List *expression_list = expression->expression.call_expression.args;
+
+	if (expression_list == NULL)
+	{
+		printf("ERROR: Malloc needs number of bytes! (1)\n");
+	}
+
+	if (expression_list->expression == NULL)
+	{
+		printf("ERROR: Malloc needs number of bytes! (2)\n");
+	}
+
+	// Visit expression to find out how much memory needs to be allocated
+	print_free("MALLOC 1/1");
+	free(write_expr_to_riscv_file(file_pointer, expression_list->expression, table, 0));
+
+	switch (TARGET)
+	{
+		case 0: // TRIREME
+			printf("MALLOC ERROR: NO SUPPORT FOR TRIREME\n");
+			break;
+
+		case 1: // RARS
+			// Open (for writing) a file that does not exist
+			fprintf(file_pointer, "# Malloc (RARS - using Sbrk)\n");
+			fprintf(file_pointer, "    li        a7, 9\n");                     // System call for Sbrk
+			fprintf(file_pointer, "    addi      a1, a1, %d\n", BYTES_PER_TYPE);// Allocate additional bytes to store the number of allocated bytes
+			                                                                    // Freeing requires to know how much memory was allocated
+			                                                                    // Even though free is not available in RARS, we do this here
+			                                                                    // in order to have the same memory model as with Spike
+			fprintf(file_pointer, "    mv        a0, a1\n");                    // a1 contains number of bytes, sys call requires this to be in a0
+			fprintf(file_pointer, "    ecall\n");                               // Call sbrk, address of allocated memory now in a0
+			fprintf(file_pointer, "    %s        a1, 0(a0)\n", STORE_CTRL_REG); // Store the amount of allocated bytes at the first byte
+			fprintf(file_pointer, "    addi      a1, a0, %d\n", BYTES_PER_TYPE);// Save the address to the allocated memory in a1, advanced by one
+			break;
+
+		case 2: // Spike
+			fprintf(file_pointer, "# Malloc (spike - using mmap)\n");
+
+			fprintf(file_pointer, "    li        a0, 0\n");                     // Anonymous mapping
+			fprintf(file_pointer, "    addi      a1, a1, %d\n", BYTES_PER_TYPE);// a1 already contains number of bytes to allocate
+			                                                                    // but add space for a1 reg contents (see RARS on why we do this)
+			fprintf(file_pointer, "    li        a2, 0x3\n");                   // Read & write to memory (PROT_READ|PROT_WRITE)
+			fprintf(file_pointer, "    li        a3, 0x22\n");                  // MAP_ANONYMOUS|MAP_PRIVATE
+			fprintf(file_pointer, "    li        a4, -1\n");                    // File descriptor for anonymous
+			fprintf(file_pointer, "    li        a5, 0\n");                     // Offset
+			fprintf(file_pointer, "    li        a7, 222\n");                   // Sys call for SYS_MMAP
+			fprintf(file_pointer, "    ecall\n");                               // Perform system call
+
+			// The result of the MMAP call is the address to the allocated 
+			// memory and is stored in a0
+			// If a0 == -1 then the sys call failed
+
+			fprintf(file_pointer, "    %s        a1, 0(a0)\n", STORE_CTRL_REG); // Store the amount of allocated bytes at the first byte
+			fprintf(file_pointer, "    addi      a1, a0, %d\n", BYTES_PER_TYPE);// Save the address to the allocated memory in a1, advanced by one
+			break;
+
+		default:
+			printf("MALLOC ERROR: UNKNOWN TARGET\n");
+			break;
+	}
 }
 
 void
