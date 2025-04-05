@@ -1,10 +1,23 @@
 int main()
 {
-    int i;
+    int i, n, size_of_int;
+    int *fibs;
 
-    for (i = 0; i < 32; i++)
+    n = 85;
+    size_of_int = 8;
+
+    fibs = malloc(n * 8);
+    *(fibs + 0 * size_of_int) = 0;
+    *(fibs + 1 * size_of_int) = 1;
+
+    for (i = 2; i < n; i++)
     {
-        spike_print(fib(i));
+        *(fibs + i * size_of_int) = *(fibs + (i-1) * size_of_int) + *(fibs + (i-2) * size_of_int);
+    }
+
+    for (i = 0; i < n; i++)
+    {
+        spike_print(*(fibs + i * size_of_int));
         print('\n');
     }
 
@@ -42,20 +55,4 @@ void spike_print(int n)
     }
 
     return;
-}
-
-int fib(int n)
-{
-    if (n == 0)
-    {
-        return 0;
-    }
-    else if (n == 1)
-    {
-        return 1;
-    } 
-    else 
-    {
-        return (fib(n-1) + fib(n-2));
-    }
 }

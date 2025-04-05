@@ -6,28 +6,28 @@ int main()
     a = 130;
     b = 124;
 
-    print_regs(_A0, _SP, _S0);
+    /* print_regs(_A0, _SP, _S0); */
 
-    print('x', ' ');
     spike_print(test(&b));
 
-    print_regs(_A0, _SP, _S0);
-
-    spike_print(a);
+    /* print_regs(_A0, _SP, _S0); */
 
     print('\n');
+    spike_print(b);
+    print('\n');
+
     exit(0);
 }
 
 int test(int* n)
 {
     
-    print_regs(_A0, _SP, _S0);
+    /* print_regs(_A0, _SP, _S0); */
 
-    print('y', ' ');
+    print('b', '=');
     spike_print(*n);
-    print('t');
     print('\n');
+    *n = 2706;
 
     return 747;
 }

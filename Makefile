@@ -98,6 +98,10 @@ rars:
 	./$(EXE)    $(INPUT_DIR)/float_sqrt.c      -r -o $(OUTPUT_DIR)/float_sqrt.s
 	./$(EXE)    $(INPUT_DIR)/mandelbrot_asci.c -r -o $(OUTPUT_DIR)/mandelbrot_asci.s
 	./$(EXE)    $(INPUT_DIR)/mandelbrot_ppm.c  -r -o $(OUTPUT_DIR)/mandelbrot_ppm.s
+	./$(EXE)    $(INPUT_DIR)/q_rsqrt.c         -r -o $(OUTPUT_DIR)/q_rsqrt.s
+	./$(EXE)    $(INPUT_DIR)/plot_q_rsqrt.c    -r -o $(OUTPUT_DIR)/plot_q_rsqrt.s
+	./$(EXE)    $(INPUT_DIR)/fib.c             -r -o $(OUTPUT_DIR)/fib.s
+	./$(EXE)    $(INPUT_DIR)/dyn_fib.c         -r -o $(OUTPUT_DIR)/dyn_fib.s
 
 
 # Build for Spike & Run
@@ -106,12 +110,16 @@ spike:
 
 	./$(EXE)    $(INPUT_DIR)/mandelbrot_asci.c -s -o $(OUTPUT_DIR)/mandelbrot_asci.s
 	./$(EXE)    $(INPUT_DIR)/mandelbrot_ppm.c  -s -o $(OUTPUT_DIR)/mandelbrot_ppm.s
+	./$(EXE)    $(INPUT_DIR)/plot_q_rsqrt.c    -s -o $(OUTPUT_DIR)/plot_q_rsqrt.s
 
 	$(RISCV_AS) $(OUTPUT_DIR)/mandelbrot_asci.s   -o $(OUTPUT_DIR)/mandelbrot_asci.o
 	$(RISCV_AS) $(OUTPUT_DIR)/mandelbrot_ppm.s    -o $(OUTPUT_DIR)/mandelbrot_ppm.o
+	$(RISCV_AS) $(OUTPUT_DIR)/plot_q_rsqrt.s      -o $(OUTPUT_DIR)/plot_q_rsqrt.o
 
 	$(RISCV_LD) $(OUTPUT_DIR)/mandelbrot_asci.o   -o $(OUTPUT_DIR)/mandelbrot_asci.out
 	$(RISCV_LD) $(OUTPUT_DIR)/mandelbrot_ppm.o    -o $(OUTPUT_DIR)/mandelbrot_ppm.out
+	$(RISCV_LD) $(OUTPUT_DIR)/plot_q_rsqrt.o      -o $(OUTPUT_DIR)/plot_q_rsqrt.out
 
 	cd          $(OUTPUT_DIR)               && $(SPIKE)            mandelbrot_asci.out
 	cd          $(OUTPUT_DIR)               && $(SPIKE)            mandelbrot_ppm.out
+	cd          $(OUTPUT_DIR)               && $(SPIKE)            plot_q_rsqrt.out

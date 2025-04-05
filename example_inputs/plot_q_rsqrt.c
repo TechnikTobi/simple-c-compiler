@@ -67,7 +67,7 @@ main
             while (col_id < width)
             {
                 /* Write the RGB values */
-                file_write(file, 255, 255, 255);
+                file_write(file, 0, 0, 0);
 
                 /* do NOT use col_id in the condition statement! */
                 ++col_id;
@@ -79,7 +79,7 @@ main
         /* Correct row, fill blank space to the left */
         while (col_id++ < x)
         {
-            file_write(file, 255, 255, 255);
+            file_write(file, 0, 0, 0);
         }
 
         /* Write plot point */
@@ -97,7 +97,7 @@ main
         while (col_id++ < width)
         {
             /* Write the RGB values */
-            file_write(file, 255, 255, 255);
+            file_write(file, 0, 0, 0);
         }
         col_id     = 0;
         current_y -= y_res;

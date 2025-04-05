@@ -8,7 +8,7 @@ Archiving the results of a compiler course from university. The aim of this proj
 The language that is accepted by the compiler has a variety of restrictions, for example:
 - No complex structs
 - Very limited pointers (enough for implementing [Quake III's fast inverse square root algorithm](https://en.wikipedia.org/wiki/Fast_inverse_square_root), see `q_rsqrt.c` and `plot_q_rsqrt.c` in the example inputs)
-- No function calls except for some built-in ones for e.g. printing or file handling. This depends on the target the code shoudld get generated for.
+- Simple function calls do work now, with some additional built-in ones for e.g. printing or file handling. This depends on the target the code shoudld get generated for.
 - No imports
 - Variables need to be declared at the start of a function.
 
