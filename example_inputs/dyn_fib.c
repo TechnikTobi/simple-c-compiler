@@ -3,7 +3,7 @@ int main()
     int i, n, size_of_int;
     int *fibs;
 
-    n = 85;
+    n = 32;
     size_of_int = 8;
 
     fibs = malloc(n * 8);
