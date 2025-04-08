@@ -1,5 +1,5 @@
 # A simple C compiler
-Archiving the results of a compiler course from university. The aim of this project was to create a simple compiler that accepts a code in a simplified and restricted version of C in three stages:
+Archiving & extending the results of a compiler course from university. The aim of this project was to create a simple compiler that accepts a code in a simplified and restricted version of C in three stages:
 1. Syntax Parser
 2. Creation of an abstract syntax tree (AST)
 3. Generating code for the RISC-V architecture
